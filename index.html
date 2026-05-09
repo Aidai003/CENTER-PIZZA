@@ -499,6 +499,9 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initial Lucide call for static icons
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
             let cart = JSON.parse(localStorage.getItem('userCart')) || [];
             let favorites = JSON.parse(localStorage.getItem('userFavs')) || [];
             let currentCategory = 'all';
@@ -522,25 +525,32 @@
 
             // Data Fetching
             async function fetchAllData() {
+                const results = { menu: [], stories: [], quotes: [], scheme: null, settings: [] };
                 try {
-                    const { data: menu } = await supabase.from('menu').select('*').order('id', { ascending: true });
-                    const { data: stories } = await supabase.from('stories').select('*').order('id', { ascending: true });
-                    const { data: quotes } = await supabase.from('quotes').select('*');
-                    const { data: scheme } = await supabase.from('scheme').select('*').eq('id', 1).single();
-                    const { data: settings } = await supabase.from('settings').select('*');
+                    const [menuRes, storiesRes, quotesRes, schemeRes, settingsRes] = await Promise.all([
+                        supabase.from('menu').select('*').order('id', { ascending: true }),
+                        supabase.from('stories').select('*').order('id', { ascending: true }),
+                        supabase.from('quotes').select('*').order('id', { ascending: true }),
+                        supabase.from('scheme').select('*').eq('id', 1).maybeSingle(),
+                        supabase.from('settings').select('*')
+                    ]);
 
-                    return { menu: menu || [], stories: stories || [], quotes: quotes?.map(q => q.text) || [], scheme, settings };
+                    if (menuRes.data) results.menu = menuRes.data;
+                    if (storiesRes.data) results.stories = storiesRes.data;
+                    if (quotesRes.data) results.quotes = quotesRes.data.map(q => q.text);
+                    if (schemeRes.data) results.scheme = schemeRes.data;
+                    if (settingsRes.data) results.settings = settingsRes.data;
                 } catch (e) {
-                    console.error("Supabase Error:", e);
-                    return { menu: [], stories: [], quotes: [], scheme: null, settings: [] };
+                    console.error("Supabase Fetch Error:", e);
                 }
+                return results;
             }
 
             const appData = await fetchAllData();
 
             function renderStories() {
                 const container = document.querySelector('.stories-container');
-                if (!container) return;
+                if (!container || !appData.stories.length) return;
                 container.innerHTML = '';
                 appData.stories.forEach(s => {
                     const item = document.createElement('div');
@@ -554,10 +564,15 @@
                 const grid = document.getElementById('main-menu-grid');
                 if (!grid) return;
                 grid.innerHTML = '';
+                
                 let filtered = category === 'all' ? appData.menu : 
                                category === 'fav' ? appData.menu.filter(i => favorites.includes(i.name)) :
                                appData.menu.filter(i => i.category === category);
                 
+                if (filtered.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; opacity: 0.5;">Блюда не найдены</div>';
+                }
+
                 filtered.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'menu-card';
@@ -569,7 +584,7 @@
                         </div>
                         <div class="card-info">
                             <h3>${item.name}</h3>
-                            <p>${item.description}</p>
+                            <p>${item.description || ''}</p>
                             <div class="card-footer">
                                 <span class="price">${item.price} с.</span>
                                 <button class="add-btn" onclick="addToCart('${item.name}', ${item.price}, '${item.image_url}')"><i data-lucide="plus"></i></button>
@@ -578,7 +593,7 @@
                     `;
                     grid.appendChild(card);
                 });
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
 
             window.toggleFav = (e, name) => {
