@@ -6,7 +6,7 @@
     <title>Gourmet Go</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&family=Dancing+Script:wght@700&family=Caveat:wght@700&family=Lobster&family=Great+Vibes&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -224,6 +224,23 @@
         .greeting-text h2 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .edit-name { cursor: pointer; color: var(--text-secondary); opacity: 0.5; transition: opacity 0.2s; display: flex; align-items: center; }
         .edit-name:hover { opacity: 1; color: var(--accent); }
+
+        /* Quote Animations */
+        .quote-container { margin-top: 15px; min-height: 80px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 0 10px; }
+        .quote-text { font-size: 24px; color: var(--text-primary); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(20px); }
+        .quote-text.active { opacity: 1; transform: translateY(0); }
+        
+        .font-elegant { font-family: 'Playfair Display', serif; font-style: italic; }
+        .font-cursive { font-family: 'Dancing Script', cursive; }
+        .font-playful { font-family: 'Caveat', cursive; font-size: 28px; }
+        .font-bold { font-family: 'Lobster', cursive; }
+        .font-fancy { font-family: 'Great Vibes', cursive; font-size: 30px; }
+
+        @keyframes quoteFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes quoteSlideIn { from { transform: translateX(-50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .anim-fade { animation: quoteFadeIn 1s forwards; }
+        .anim-slide { animation: quoteSlideIn 0.8s forwards; }
     </style>
 </head>
 <body>
@@ -252,11 +269,15 @@
     </div>
 
     <div class="app-container">
-        <div class="user-greeting" id="greeting-area" style="display: none;">
-            <div class="user-avatar" id="user-initials">?</div>
-            <div class="greeting-text">
-                <h2><span data-i18n="hello">Привет</span>, <span id="user-display-name">Гость</span>! <span class="edit-name" id="change-name-btn" title="Изменить имя"><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></span></h2>
-                <p data-i18n="tagline">Что закажем сегодня?</p>
+        <div class="user-greeting" id="greeting-area" style="display: none; flex-direction: column; align-items: flex-start;">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <div class="user-avatar" id="user-initials">?</div>
+                <div class="greeting-text">
+                    <h2><span data-i18n="hello">Привет</span>, <span id="user-display-name">Гость</span>! <span class="edit-name" id="change-name-btn" title="Изменить имя"><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></span></h2>
+                </div>
+            </div>
+            <div class="quote-container" id="quote-box">
+                <!-- Quotes will be injected here -->
             </div>
         </div>
 
@@ -457,14 +478,6 @@
                         <p data-i18n="myFavsDesc">Список ваших любимых блюд</p>
                     </div>
                 </div>
-                </div>
-                <div class="profile-menu-item" style="margin-top: 20px; border-color: rgba(239,68,68,0.2);">
-                    <i data-lucide="log-out" style="color: #ef4444;"></i>
-                    <div class="profile-menu-item-info" onclick="localStorage.clear(); location.reload();">
-                        <h4 style="color: #ef4444;" data-i18n="resetData">Сбросить данные</h4>
-                        <p data-i18n="resetDataDesc">Очистить историю и имя</p>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -550,7 +563,6 @@
                     schemeTitle: 'Бронирование стола', resTable: 'Бронь: Стол №', resName: 'Ваше имя', resGuests: 'Количество гостей', bookBtn: 'Забронировать через WhatsApp',
                     regCustomer: 'Постоянный клиент', changeName: 'Изменить имя', changeNameDesc: 'Настройте свое отображаемое имя',
                     appLang: 'Язык приложения', appLangDesc: 'Выбрать другой язык', myFavs: 'Мои фавориты', myFavsDesc: 'Список ваших любимых блюд',
-                    resetData: 'Сбросить данные', resetDataDesc: 'Очистить историю и имя',
                     addrPlc: 'Адрес доставки', aptPlc: 'Кв/Офис', floorPlc: 'Подъезд/Этаж', tableLabel: 'Стол №', phonePlc: 'Телефон (+996...)',
                     item1Name: 'Королевский Бургер', item1Desc: 'Сочная говядина, чеддер, фирменный соус',
                     item2Name: 'Маргарита Премиум', item2Desc: 'Свежие томаты, моцарелла, базилик',
@@ -571,7 +583,6 @@
                     schemeTitle: 'Столду брондоо', resTable: 'Бронь: Стол №', resName: 'Сиздин атыңыз', resGuests: 'Коноктордун саны', bookBtn: 'WhatsApp аркылуу брондоо',
                     regCustomer: 'Туруктуу кардар', changeName: 'Атын өзгөртүү', changeNameDesc: 'Өзүңүздүн атыңызды ырастаңыз',
                     appLang: 'Колдонмо тили', appLangDesc: 'Башка тилди тандаңыз', myFavs: 'Тандалгандарым', myFavsDesc: 'Сүйүктүү тамактарыңыздын тизмеси',
-                    resetData: 'Маалыматтарды тазалоо', resetDataDesc: 'Тарыхты жана атын тазалоо',
                     addrPlc: 'Жеткирүү дареги', aptPlc: 'Батир/Офис', floorPlc: 'Подъезд/Кабат', tableLabel: 'Стол №', phonePlc: 'Телефон (+996...)',
                     item1Name: 'Королдук Бургер', item1Desc: 'Ширелүү уй эти, чеддер, фирмалык соус',
                     item2Name: 'Маргарита Премиум', item2Desc: 'Жаңы помидорлор, моцарелла, базилик',
@@ -592,7 +603,6 @@
                     schemeTitle: 'Table Reservation', resTable: 'Booking: Table #', resName: 'Your name', resGuests: 'Number of guests', bookBtn: 'Book via WhatsApp',
                     regCustomer: 'Regular Customer', changeName: 'Change Name', changeNameDesc: 'Customize your display name',
                     appLang: 'App Language', appLangDesc: 'Select another language', myFavs: 'My Favorites', myFavsDesc: 'List of your liked dishes',
-                    resetData: 'Reset Data', resetDataDesc: 'Clear history and name',
                     addrPlc: 'Delivery Address', aptPlc: 'Apt/Office', floorPlc: 'Entrance/Floor', tableLabel: 'Table #', phonePlc: 'Phone (+996...)',
                     item1Name: 'Royal Burger', item1Desc: 'Juicy beef, cheddar, signature sauce',
                     item2Name: 'Margherita Premium', item2Desc: 'Fresh tomatoes, mozzarella, basil',
@@ -1183,6 +1193,36 @@
             };
 
             renderMenu();
+
+            // Quote Rotation Logic
+            const quoteBox = document.getElementById('quote-box');
+            const fonts = ['font-elegant', 'font-cursive', 'font-playful', 'font-bold', 'font-fancy'];
+            const anims = ['anim-fade', 'anim-slide'];
+            let currentQuoteIdx = 0;
+
+            const updateQuote = () => {
+                const appQuotes = JSON.parse(localStorage.getItem('appQuotes')) || [
+                    "Лучшая пицца в городе — специально для вас!",
+                    "Время для вкусных открытий!",
+                    "С любовью из печи в ваши руки.",
+                    "Вкус, который вдохновляет."
+                ];
+                
+                if (appQuotes.length === 0) {
+                    quoteBox.innerHTML = '<p class="quote-text active" style="font-size: 16px; opacity: 0.5;">Что закажем сегодня?</p>';
+                    return;
+                }
+
+                currentQuoteIdx = (currentQuoteIdx + 1) % appQuotes.length;
+                const quote = appQuotes[currentQuoteIdx];
+                const font = fonts[Math.floor(Math.random() * fonts.length)];
+                const anim = anims[Math.floor(Math.random() * anims.length)];
+
+                quoteBox.innerHTML = `<p class="quote-text active ${font} ${anim}">${quote}</p>`;
+            };
+
+            updateQuote();
+            setInterval(updateQuote, 5000);
         });
     </script>
 </body>

@@ -77,6 +77,7 @@
             <div class="tab" onclick="switchTab('stories', this)">Сториз</div>
             <div class="tab" onclick="switchTab('orders', this)">Заказы</div>
             <div class="tab" onclick="switchTab('scheme', this)">Схема зала</div>
+            <div class="tab" onclick="switchTab('quotes', this)">Цитаты</div>
             <div class="tab" onclick="switchTab('settings', this)">Настройки</div>
         </div>
 
@@ -135,6 +136,20 @@
                 <label style="display:block; margin: 20px 0 10px; font-size: 14px; color: var(--text-dim);">WhatsApp номер для заказов (без +)</label>
                 <input type="text" id="setting-phone" placeholder="996555123456">
                 <button onclick="saveSettings()">Сохранить настройки</button>
+            </div>
+        </div>
+
+        <div id="quotes-section" class="section">
+            <div class="item-card">
+                <h3>Управление цитатами</h3>
+                <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 15px;">Эти фразы будут отображаться на главной странице с красивой анимацией.</p>
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <input type="text" id="new-quote-text" placeholder="Введите вдохновляющую фразу..." style="margin-bottom:0; flex:1;">
+                    <button onclick="addQuote()" style="width:auto; padding:0 20px;">Добавить</button>
+                </div>
+                <div id="quotes-list" class="grid">
+                    <!-- Quotes will be here -->
+                </div>
             </div>
         </div>
     </div>
@@ -203,6 +218,7 @@
                 renderMenu();
                 renderStories();
                 renderOrders();
+                renderQuotes();
                 loadSettings();
                 initScheme();
             } else {
@@ -552,6 +568,53 @@
                 };
                 reader.readAsDataURL(file);
             }
+        }
+        // --- QUOTES LOGIC ---
+        let quotes = JSON.parse(localStorage.getItem('appQuotes')) || [
+            "Лучшая пицца в городе — специально для вас!",
+            "Время для вкусных открытий!",
+            "С любовью из печи в ваши руки.",
+            "Вкус, который вдохновляет."
+        ];
+
+        function renderQuotes() {
+            const list = document.getElementById('quotes-list');
+            list.innerHTML = '';
+            quotes.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.style.padding = '15px';
+                card.innerHTML = `
+                    <p style="font-style: italic; margin-bottom: 15px;">"${q}"</p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-action btn-del" onclick="deleteQuote(${index})"><i data-lucide="trash-2"></i> Удалить</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function addQuote() {
+            const input = document.getElementById('new-quote-text');
+            const text = input.value.trim();
+            if (text) {
+                quotes.push(text);
+                input.value = '';
+                saveQuotes();
+            }
+        }
+
+        function deleteQuote(index) {
+            if (confirm('Удалить эту цитату?')) {
+                quotes.splice(index, 1);
+                saveQuotes();
+            }
+        }
+
+        function saveQuotes() {
+            localStorage.setItem('appQuotes', JSON.stringify(quotes));
+            renderQuotes();
         }
     </script>
 </body>
