@@ -177,10 +177,19 @@
         let modalType = 'item';
 
         async function login() {
+            const btn = document.querySelector('#login-overlay button');
             const pass = document.getElementById('admin-pass').value;
+            
             if (pass === 'admin') {
-                document.getElementById('login-overlay').style.display = 'none';
-                await refreshAll();
+                btn.innerHTML = '<i class="loader"></i>';
+                btn.disabled = true;
+                try {
+                    await refreshAll();
+                    document.getElementById('login-overlay').style.display = 'none';
+                } catch (err) {
+                    console.error("Login Refresh Error:", err);
+                    document.getElementById('login-overlay').style.display = 'none'; // Still enter even if fetch fails
+                }
             } else {
                 alert('Неверный пароль');
             }
@@ -188,25 +197,31 @@
 
         async function refreshAll() {
             try {
-                const { data: menuData } = await supabase.from('menu').select('*').order('id', { ascending: true });
-                const { data: storyData } = await supabase.from('stories').select('*').order('id', { ascending: true });
-                const { data: quoteData } = await supabase.from('quotes').select('*').order('id', { ascending: true });
-                const { data: orderData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+                // Fetch each table individually to prevent one error from stopping everything
+                const [menuRes, storyRes, quoteRes, orderRes] = await Promise.all([
+                    supabase.from('menu').select('*').order('id', { ascending: true }),
+                    supabase.from('stories').select('*').order('id', { ascending: true }),
+                    supabase.from('quotes').select('*').order('id', { ascending: true }),
+                    supabase.from('orders').select('*').order('created_at', { ascending: false })
+                ]);
 
-                menu = menuData || [];
-                stories = storyData || [];
-                quotes = quoteData || [];
-                orders = orderData || [];
+                menu = menuRes.data || [];
+                stories = storyRes.data || [];
+                quotes = quoteRes.data || [];
+                orders = orderRes.data || [];
 
                 renderMenu();
                 renderStories();
                 renderQuotes();
                 renderOrders();
-                initScheme();
-                loadSettings();
+                
+                // Load these separately
+                initScheme().catch(e => console.error("Scheme Load Error:", e));
+                loadSettings().catch(e => console.error("Settings Load Error:", e));
             } catch (e) {
-                console.error(e);
+                console.error("Critical Refresh Error:", e);
             }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function switchTab(tab, el) {
