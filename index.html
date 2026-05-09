@@ -259,6 +259,14 @@
                 <p data-i18n="tagline">Что закажем сегодня?</p>
             </div>
         </div>
+
+        <div class="header" style="padding-top: 10px; padding-bottom: 10px;">
+            <div class="search-bar" id="open-search">
+                <i data-lucide="search"></i>
+                <input type="text" placeholder="Поиск блюд..." readonly>
+            </div>
+        </div>
+
         <section class="stories-container">
             <div class="story-item">
                 <div class="story-ring"><img src="novelty_dishes_story_1777988971245.png" alt="Новинки"></div>
@@ -449,6 +457,7 @@
                         <p data-i18n="myFavsDesc">Список ваших любимых блюд</p>
                     </div>
                 </div>
+                </div>
                 <div class="profile-menu-item" style="margin-top: 20px; border-color: rgba(239,68,68,0.2);">
                     <i data-lucide="log-out" style="color: #ef4444;"></i>
                     <div class="profile-menu-item-info" onclick="localStorage.clear(); location.reload();">
@@ -456,6 +465,20 @@
                         <p data-i18n="resetDataDesc">Очистить историю и имя</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Search Modal -->
+        <div id="search-modal" class="search-modal">
+            <div class="search-header">
+                <div class="search-input-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Что вы ищете?">
+                </div>
+                <div class="close-search" id="close-search"><i data-lucide="x"></i></div>
+            </div>
+            <div class="search-results" id="results-grid">
+                <!-- Results here -->
             </div>
         </div>
     </div>
@@ -504,6 +527,13 @@
             const splitCountEl = document.getElementById('split-count');
             const splitResultEl = document.getElementById('split-result');
             const splitSection = document.getElementById('split-section');
+
+            // Search elements
+            const openSearchBtn = document.getElementById('open-search');
+            const closeSearchBtn = document.getElementById('close-search');
+            const searchModal = document.getElementById('search-modal');
+            const searchInput = document.getElementById('search-input');
+            const resultsGrid = document.getElementById('results-grid');
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
 
@@ -864,15 +894,91 @@
             openSearchBtn.addEventListener('click', () => {
                 searchModal.style.display = 'flex';
                 searchInput.focus();
-                // Move all cards to search results by default or clear
                 updateSearch('');
             });
 
             closeSearchBtn.addEventListener('click', () => {
                 searchModal.style.display = 'none';
-                // Reset menu view to 'all' or current cat
                 const activePill = document.querySelector('.filter-pill.active');
-                activePill.click();
+                if (activePill) activePill.click();
+            });
+
+            // Scheme / Reservation Logic
+            const renderClientScheme = () => {
+                const schemeData = JSON.parse(localStorage.getItem('tableScheme')) || { image: '', tables: [] };
+                const img = document.getElementById('client-scheme-img');
+                const container = document.getElementById('client-scheme-markers');
+                const emptyMsg = document.getElementById('client-scheme-empty');
+                
+                if (!schemeData.image) {
+                    img.style.display = 'none';
+                    emptyMsg.style.display = 'block';
+                    return;
+                }
+                
+                img.src = schemeData.image;
+                img.style.display = 'block';
+                emptyMsg.style.display = 'none';
+                container.innerHTML = '';
+                
+                schemeData.tables.forEach(t => {
+                    const marker = document.createElement('div');
+                    marker.className = 'table-marker';
+                    marker.style.position = 'absolute';
+                    marker.style.left = t.x + '%';
+                    marker.style.top = t.y + '%';
+                    marker.style.width = '30px';
+                    marker.style.height = '30px';
+                    marker.style.background = 'var(--accent)';
+                    marker.style.color = 'white';
+                    marker.style.borderRadius = '50%';
+                    marker.style.display = 'flex';
+                    marker.style.justifyContent = 'center';
+                    marker.style.alignItems = 'center';
+                    marker.style.fontSize = '12px';
+                    marker.style.fontWeight = 'bold';
+                    marker.style.transform = 'translate(-50%, -50%)';
+                    marker.style.cursor = 'pointer';
+                    marker.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
+                    marker.innerText = t.num;
+                    
+                    marker.onclick = () => {
+                        document.getElementById('res-table-num').innerText = t.num;
+                        document.getElementById('reservation-form-modal').style.display = 'flex';
+                        // Pre-fill name if exists
+                        const savedName = localStorage.getItem('userName');
+                        if (savedName) document.getElementById('res-name').value = savedName;
+                    };
+                    container.appendChild(marker);
+                });
+            };
+
+            openSchemeBtn.addEventListener('click', () => {
+                schemeModal.style.display = 'flex';
+                renderClientScheme();
+            });
+
+            closeSchemeBtn.addEventListener('click', () => {
+                schemeModal.style.display = 'none';
+            });
+
+            document.getElementById('submit-res-btn').addEventListener('click', () => {
+                const table = document.getElementById('res-table-num').innerText;
+                const name = document.getElementById('res-name').value;
+                const date = document.getElementById('res-date').value;
+                const time = document.getElementById('res-time').value;
+                const guests = document.getElementById('res-guests').value;
+                
+                if (!name || !date || !time || !guests) {
+                    alert('Пожалуйста, заполните все поля');
+                    return;
+                }
+                
+                const message = `*Бронирование стола*%0A%0A*Стол №${table}*%0A*Имя:* ${name}%0A*Дата:* ${date}%0A*Время:* ${time}%0A*Гостей:* ${guests}`;
+                const phone = localStorage.getItem('adminPhone') || "996555123456";
+                window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+                document.getElementById('reservation-form-modal').style.display = 'none';
+                schemeModal.style.display = 'none';
             });
 
             openProfileBtn.addEventListener('click', () => {
