@@ -197,7 +197,7 @@
             </div>
 
             <input type="text" id="user-name-input" class="name-input" placeholder="Ваше имя" maxlength="20">
-            <button class="start-btn" id="save-name-btn" data-i18n="startBtn">Начать заказ</button>
+            <button class="start-btn" id="save-name-btn" onclick="(function(){ var v=document.getElementById('user-name-input').value.trim(); if(v){localStorage.setItem('userName',v);location.reload();}else{alert('Введите ваше имя');} })()" data-i18n="startBtn">Начать заказ</button>
         </div>
     </div>
 
