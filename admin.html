@@ -59,7 +59,7 @@
     <div id="login-overlay">
         <div style="background: var(--card); padding: 40px; border-radius: 20px; text-align: center; width: 300px;">
             <h2 style="margin-bottom: 20px;">Admin Login</h2>
-            <input type="password" id="admin-pass" placeholder="Password">
+            <input type="password" id="admin-pass" placeholder="Password" onkeydown="if(event.key==='Enter') login()">
             <button onclick="login()" style="background: var(--accent); color: white;">Login</button>
         </div>
     </div>
@@ -167,7 +167,13 @@
     <script>
         const SUPABASE_URL = 'https://ihzeeilfmbgsddzcyywp.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloemVlaWxmbWJnc2RkemN5eXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTU4NzMsImV4cCI6MjA5Mzg5MTg3M30.nv3DvgcgxHvk1J_W0U5o94LWY5w8nAcZTyAg92mz77M';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch(e) {
+            console.error('Supabase init failed:', e);
+        }
 
         let menu = [];
         let stories = [];
@@ -181,17 +187,13 @@
             const pass = document.getElementById('admin-pass').value;
             
             if (pass === 'admin') {
-                btn.innerHTML = '<i class="loader"></i>';
+                btn.textContent = 'Загрузка...';
                 btn.disabled = true;
-                try {
-                    await refreshAll();
-                    document.getElementById('login-overlay').style.display = 'none';
-                } catch (err) {
-                    console.error("Login Refresh Error:", err);
-                    document.getElementById('login-overlay').style.display = 'none'; // Still enter even if fetch fails
-                }
+                // Always hide overlay regardless of what happens
+                await refreshAll().catch(e => console.error('Refresh failed:', e));
+                document.getElementById('login-overlay').style.display = 'none';
             } else {
-                alert('Неверный пароль');
+                alert('Неверный пароль! Пароль: admin');
             }
         }
 
