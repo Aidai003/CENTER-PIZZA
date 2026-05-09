@@ -312,7 +312,6 @@
         </section>
         <div class="categories-filter" id="cat-filter">
             <div class="filter-pill active" data-cat="all" data-i18n="all">Все</div>
-            <div class="filter-pill" data-cat="fav" data-i18n="fav">Избранное</div>
             <div class="filter-pill" data-cat="first" data-i18n="first">Первые блюда</div>
             <div class="filter-pill" data-cat="second" data-i18n="second">Вторые блюда</div>
             <div class="filter-pill" data-cat="drinks" data-i18n="drinks">Напитки</div>
@@ -471,7 +470,7 @@
                         <p data-i18n="appLangDesc">Выбрать другой язык</p>
                     </div>
                 </div>
-                <div class="profile-menu-item" onclick="profileModal.style.display='none'; document.querySelector('[data-cat=\'fav\']').click();">
+                <div class="profile-menu-item" onclick="profileModal.style.display='none'; applyCategoryFilter('fav');">
                     <i data-lucide="heart"></i>
                     <div class="profile-menu-item-info">
                         <h4 data-i18n="myFavs">Мои фавориты</h4>
@@ -1002,16 +1001,36 @@
             navFavBtn.addEventListener('click', () => {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 navFavBtn.classList.add('active');
-                document.querySelector('[data-cat="fav"]').click();
+                applyCategoryFilter('fav');
                 window.scrollTo({ top: document.getElementById('cat-filter').offsetTop - 80, behavior: 'smooth' });
             });
 
             navHomeBtn.addEventListener('click', () => {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 navHomeBtn.classList.add('active');
-                document.querySelector('[data-cat="all"]').click();
+                applyCategoryFilter('all');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
+
+            const applyCategoryFilter = (category) => {
+                const pills = document.querySelectorAll('.filter-pill');
+                pills.forEach(p => {
+                    if (p.getAttribute('data-cat') === category) p.classList.add('active');
+                    else p.classList.remove('active');
+                });
+
+                const cards = document.querySelectorAll('.menu-card');
+                cards.forEach(card => {
+                    const itemName = card.querySelector('h3').innerText;
+                    if (category === 'all') {
+                        card.style.display = 'block';
+                    } else if (category === 'fav') {
+                        card.style.display = favorites.includes(itemName) ? 'block' : 'none';
+                    } else {
+                        card.style.display = (card.getAttribute('data-category') === category) ? 'block' : 'none';
+                    }
+                });
+            };
 
             const updateSearch = (query) => {
                 resultsGrid.innerHTML = '';
@@ -1053,24 +1072,9 @@
 
             // Filtering Logic
             const pills = document.querySelectorAll('.filter-pill');
-
             pills.forEach(pill => {
                 pill.addEventListener('click', () => {
-                    pills.forEach(p => p.classList.remove('active'));
-                    pill.classList.add('active');
-
-                    const category = pill.getAttribute('data-cat');
-                    const cards = document.querySelectorAll('.menu-card'); // Dynamic selection
-                    cards.forEach(card => {
-                        const itemName = card.querySelector('h3').innerText;
-                        if (category === 'all') {
-                            card.style.display = 'block';
-                        } else if (category === 'fav') {
-                            card.style.display = favorites.includes(itemName) ? 'block' : 'none';
-                        } else {
-                            card.style.display = (card.getAttribute('data-category') === category) ? 'block' : 'none';
-                        }
-                    });
+                    applyCategoryFilter(pill.getAttribute('data-cat'));
                 });
             });
 
