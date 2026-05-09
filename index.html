@@ -196,8 +196,8 @@
                 <button class="lang-btn" onclick="window.setLang('en')">English</button>
             </div>
 
-            <input type="text" id="user-name-input" class="name-input" placeholder="Ваше имя" maxlength="20">
-            <button class="start-btn" id="save-name-btn" onclick="(function(){ var v=document.getElementById('user-name-input').value.trim(); if(v){localStorage.setItem('userName',v);location.reload();}else{alert('Введите ваше имя');} })()" data-i18n="startBtn">Начать заказ</button>
+            <input type="text" id="user-name-input" class="name-input" placeholder="Ваше имя" maxlength="20" onkeydown="if(event.key==='Enter') window.startOrder()">
+            <button class="start-btn" id="save-name-btn" onclick="window.startOrder()" data-i18n="startBtn">Начать заказ</button>
         </div>
     </div>
 
@@ -383,6 +383,20 @@
         let appData = { menu: [], stories: [], quotes: [], scheme: null, settings: [] };
 
         // GLOBAL FUNCTIONS ATTACHED TO WINDOW
+        window.startOrder = () => {
+            const val = document.getElementById('user-name-input').value.trim();
+            if (!val) { alert('Пожалуйста, введите ваше имя'); return; }
+            localStorage.setItem('userName', val);
+            // Switch screens directly without reloading
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+            // Load data and initialize
+            document.getElementById('display-user-name') && (document.getElementById('display-user-name').innerText = val);
+            fetchAllData();
+            setInterval(rotateQuotes, 5000);
+            lucide.createIcons();
+        };
+
         window.setLang = (lang) => {
             currentLang = lang;
             localStorage.setItem('userLang', lang);
