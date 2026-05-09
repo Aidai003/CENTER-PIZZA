@@ -28,15 +28,16 @@
             line-height: 1.5;
         }
 
+        /* Welcome Screen: by default SHOWN, JS will hide it if user has name */
         .welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 10000; display: none;
+            background: var(--bg); z-index: 10000; display: flex;
             flex-direction: column; justify-content: center; align-items: center; padding: 20px;
         }
         .welcome-content { text-align: center; max-width: 400px; width: 100%; }
         .welcome-brand { font-family: 'Bebas Neue', cursive; font-size: 64px; color: var(--accent); margin-bottom: 10px; }
         .name-input { 
-            width: 100%; background: var(--card); border: 2px solid var(--glass); 
+            width: 100%; background: var(--card); border: 2px solid rgba(255,255,255,0.1); 
             padding: 18px; border-radius: 15px; color: white; font-size: 18px; 
             margin-top: 30px; text-align: center; outline: none; transition: 0.3s;
         }
@@ -48,9 +49,8 @@
         }
         .start-btn:active { transform: scale(0.95); }
 
+        /* App: by default hidden, JS shows it if user has name */
         .app-container { display: none; padding-bottom: 100px; }
-        body.has-name .welcome-screen { display: none; }
-        body.has-name .app-container { display: block; }
 
         .header { padding: 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
         .search-bar { 
@@ -618,18 +618,35 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const name = localStorage.getItem('userName');
-            if (name) document.body.classList.add('has-name');
-            else document.getElementById('welcome-screen').style.display = 'flex';
+            const welcomeEl = document.getElementById('welcome-screen');
+            const appEl = document.getElementById('app-container');
+
+            if (name) {
+                // User already has a name — hide welcome, show app
+                if (welcomeEl) welcomeEl.style.display = 'none';
+                if (appEl) appEl.style.display = 'block';
+            } else {
+                // No name yet — show welcome, hide app
+                if (welcomeEl) welcomeEl.style.display = 'flex';
+                if (appEl) appEl.style.display = 'none';
+            }
 
             document.getElementById('save-name-btn').onclick = () => {
                 const val = document.getElementById('user-name-input').value.trim();
-                if (val) { localStorage.setItem('userName', val); location.reload(); }
+                if (val) {
+                    localStorage.setItem('userName', val);
+                    location.reload();
+                } else {
+                    alert('Пожалуйста, введите ваше имя');
+                }
             };
 
             window.setLang(currentLang);
             window.updateCartUI();
-            fetchAllData();
-            setInterval(rotateQuotes, 5000);
+            if (name) {
+                fetchAllData();
+                setInterval(rotateQuotes, 5000);
+            }
             lucide.createIcons();
         });
     </script>
