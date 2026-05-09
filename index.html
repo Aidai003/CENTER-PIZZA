@@ -262,9 +262,21 @@
             transition: transform 0.2s;
         }
         .call-waiter-btn:active { transform: scale(0.9); }
+
+        .version-tag {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 10px;
+            opacity: 0.3;
+            z-index: 9999;
+            pointer-events: none;
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <div class="version-tag">v1.2.0</div>
     <script>
         // Immediate check to prevent flicker and jerking
         if (localStorage.getItem('userName')) {
@@ -522,6 +534,20 @@
             const closeSchemeBtn = document.getElementById('close-scheme');
             const navHomeBtn = document.getElementById('nav-home-btn');
             const navFavBtn = document.getElementById('nav-fav-btn');
+
+            // Welcome Screen Logic
+            const saveNameBtn = document.getElementById('save-name-btn');
+            if (saveNameBtn) {
+                saveNameBtn.onclick = () => {
+                    const name = document.getElementById('user-name-input').value.trim();
+                    if (name) {
+                        localStorage.setItem('userName', name);
+                        location.reload();
+                    } else {
+                        alert('Пожалуйста, введите ваше имя');
+                    }
+                };
+            }
 
             // Data Fetching
             async function fetchAllData() {
