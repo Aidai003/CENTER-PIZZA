@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Pizza Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #f97316;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .admin-container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Login */
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .login-card { background: var(--card); padding: 40px; border-radius: 24px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; margin-bottom: 20px; outline: none; }
+        button { width: 100%; padding: 15px; border-radius: 12px; background: var(--accent); color: white; border: none; font-weight: 700; cursor: pointer; }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
+        .tab { padding: 10px 20px; border-radius: 10px; background: var(--card); cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        .tab.active { background: var(--accent); }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .item-card { background: var(--card); padding: 25px; border-radius: 24px; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+        .item-card img { width: 80px; height: 80px; border-radius: 16px; object-fit: cover; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .item-actions { margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: 0.2s; }
+        .btn-edit { background: rgba(255,255,255,0.1); color: white; }
+        .btn-edit:hover { background: rgba(255,255,255,0.2); }
+        .btn-del { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .btn-del:hover { background: rgba(239, 68, 68, 0.2); }
+
+        .order-row { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--accent); }
+        .order-meta { font-size: 12px; color: var(--text-dim); margin-top: 5px; }
+
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1500; padding: 20px; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        select { width: 100%; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.2); color: white; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        
+        .table-marker { position: absolute; width: 30px; height: 30px; background: var(--accent); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; transform: translate(-50%, -50%); cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.5); z-index: 10;}
+        .table-marker:hover { background: #ea580c; z-index: 11; transform: translate(-50%, -50%) scale(1.1); }
+    </style>
+</head>
+<body>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <h1 style="margin-bottom: 20px;">Админ-панель</h1>
+            <input type="password" id="admin-pass" placeholder="Введите пароль">
+            <button onclick="login()">Войти</button>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <header>
+            <h1>Админ-центр</h1>
+            <div style="display:flex; gap:10px;">
+                <button style="width: auto; padding: 10px 20px; background: #475569;" onclick="openModal('story')">+ Добавить Сториз</button>
+                <button style="width: auto; padding: 10px 20px;" onclick="openModal('item')">+ Добавить блюдо</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('menu', this)">Меню</div>
+            <div class="tab" onclick="switchTab('stories', this)">Сториз</div>
+            <div class="tab" onclick="switchTab('orders', this)">Заказы</div>
+            <div class="tab" onclick="switchTab('scheme', this)">Схема зала</div>
+            <div class="tab" onclick="switchTab('settings', this)">Настройки</div>
+        </div>
+
+        <div id="menu-section" class="section active">
+            <div class="grid" id="menu-grid">
+                <!-- Items here -->
+            </div>
+        </div>
+
+        <div id="stories-section" class="section">
+            <div class="grid" id="stories-grid">
+                <!-- Stories here -->
+            </div>
+        </div>
+
+        <div id="orders-section" class="section">
+            <div id="orders-list">
+                <!-- Orders here -->
+            </div>
+        </div>
+
+        <div id="scheme-section" class="section">
+            <div class="item-card">
+                <h3>Настройка схемы зала</h3>
+                <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 15px;">Загрузите изображение плана зала, затем кликните по картинке, чтобы добавить столы.</p>
+                
+                <label style="display:block; margin: 10px 0 5px; font-size: 14px;">Ссылка на схему (или загрузите файл)</label>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="scheme-img-url" placeholder="URL картинки" style="margin-bottom:0; flex:1;" onchange="loadScheme()">
+                    <input type="file" id="scheme-file" accept="image/*" style="display:none;" onchange="handleSchemeUpload(this)">
+                    <button onclick="document.getElementById('scheme-file').click()" style="width:auto; padding:0 20px; background:#475569;">Файл</button>
+                </div>
+                
+                <div id="scheme-container" style="position: relative; width: 100%; max-width: 600px; margin: 0 auto; background: rgba(0,0,0,0.2); border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; overflow: hidden; cursor: crosshair;">
+                    <img id="scheme-preview" src="" style="width: 100%; display: block; opacity: 0.5;" onclick="addTableMarker(event)">
+                    <div id="scheme-markers"></div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <span id="scheme-status" style="font-size: 14px; color: var(--accent);">Схема не загружена</span>
+                </div>
+                
+                <button onclick="saveScheme()" style="margin-top: 20px;">Сохранить схему</button>
+            </div>
+            
+            <div class="item-card" style="margin-top: 20px;">
+                <h3>Список столов</h3>
+                <div id="scheme-tables-list" style="margin-top: 15px;">
+                    <!-- Table rows will go here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-section" class="section">
+            <div class="item-card">
+                <h3>Основные настройки</h3>
+                <label style="display:block; margin: 20px 0 10px; font-size: 14px; color: var(--text-dim);">WhatsApp номер для заказов (без +)</label>
+                <input type="text" id="setting-phone" placeholder="996555123456">
+                <button onclick="saveSettings()">Сохранить настройки</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title" style="margin-bottom: 20px;">Новое блюдо</h2>
+            <div id="modal-img-preview" style="width: 100%; height: 200px; border-radius: 15px; background: rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px dashed rgba(255,255,255,0.1);">
+                <span style="color:var(--text-dim); font-size:14px;">Предпросмотр фото</span>
+            </div>
+            <input type="text" id="item-name" placeholder="Название блюда">
+            <input type="text" id="item-desc" placeholder="Описание">
+            <input type="text" id="item-price" placeholder="Цена (например: 850 / 1200)">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" id="item-img" placeholder="URL картинки" style="margin-bottom:0; flex:1;" oninput="updatePreview(this.value)">
+                <button onclick="generateImage()" style="width:auto; padding:0 15px; background:#475569;"><i data-lucide="sparkles"></i></button>
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:10px; font-size:14px; color:var(--text-dim);">Или загрузить свое фото:</label>
+                <input type="file" id="item-file" accept="image/*" onchange="handleFileUpload(this)">
+            </div>
+            <select id="item-cat">
+                <option value="first">Первые блюда</option>
+                <option value="second">Вторые блюда</option>
+                <option value="drinks">Напитки</option>
+                <option value="desserts">Десерты</option>
+                <option value="snacks">Закуски</option>
+            </select>
+            <div style="display:flex; gap:10px;">
+                <button style="background: #334155;" onclick="closeModal()">Отмена</button>
+                <button id="save-item-btn" onclick="saveItem()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_MENU = [
+            { id: 1, name: 'Королевский Бургер', desc: 'Сочная говядина, чеддер, фирменный соус', price: 2450, cat: 'second', img: 'assets/burger.png', i18n: 'item1' },
+            { id: 2, name: 'Маргарита Премиум', desc: 'Свежие томаты, моцарелла, базилик', price: 3100, cat: 'second', img: 'assets/pizza.png', i18n: 'item2' },
+            { id: 3, name: 'Сет "Токио"', desc: 'Лосось, тунец, авокадо, 16 шт.', price: 5800, cat: 'snacks', img: 'assets/sushi.png', i18n: 'item3' },
+            { id: 4, name: 'Шоколадный Фондан', desc: 'Теплый шоколад с малиновым соусом', price: 1850, cat: 'desserts', img: 'assets/dessert.png', i18n: 'item4' },
+            { id: 5, name: 'Борщ "Украинский"', desc: 'Свекла, говядина, свежая сметана', price: 850, cat: 'first', img: 'assets/burger.png', i18n: 'item5' },
+            { id: 6, name: 'Шорпо из баранины', desc: 'Наваристый бульон, отборная баранина и овощи', price: 950, cat: 'first', img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=300&q=80', i18n: 'item6' },
+            { id: 7, name: 'Пицца центр', desc: '1090 гр, 40 см', price: 850, cat: 'second', img: 'assets/pizza.png', i18n: 'item7' }
+        ];
+
+        const DEFAULT_STORIES = [
+            { id: 1, title: 'Новинки', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80', i18n: 'new' },
+            { id: 2, title: 'Акции', img: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=200&q=80', i18n: 'promo' },
+            { id: 3, title: 'Бонусы', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80', i18n: 'bonus' },
+            { id: 4, title: 'Адрес', img: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=200&q=80', i18n: 'address' },
+            { id: 5, title: 'О нас', img: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=200&q=80', i18n: 'about' }
+        ];
+
+        let menu = JSON.parse(localStorage.getItem('customMenu')) || DEFAULT_MENU;
+        let stories = JSON.parse(localStorage.getItem('customStories')) || DEFAULT_STORIES;
+        let orders = JSON.parse(localStorage.getItem('allOrders')) || [];
+        let editingId = null;
+        let modalType = 'item'; // 'item' or 'story'
+
+        function login() {
+            const pass = document.getElementById('admin-pass').value;
+            if (pass === 'admin') {
+                document.getElementById('login-overlay').style.display = 'none';
+                renderMenu();
+                renderStories();
+                renderOrders();
+                loadSettings();
+                initScheme();
+            } else {
+                alert('Неверный пароль');
+            }
+        }
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tab + '-section').classList.add('active');
+        }
+
+        function renderMenu() {
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = '';
+            menu.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <img src="${item.img}">
+                        <div>
+                            <h3 style="font-size:18px;">${item.name}</h3>
+                            <div style="font-weight: 700; color: var(--accent); margin-top:4px;">${item.price} с.</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-dim); margin-top:15px; line-height:1.5;">${item.desc}</p>
+                    <div class="item-actions">
+                        <button class="btn-action btn-edit" onclick="editItem(${item.id})"><i data-lucide="edit-3"></i> Изменить</button>
+                        <button class="btn-action btn-del" onclick="deleteItem(${item.id})"><i data-lucide="trash-2"></i> Удалить</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        function renderStories() {
+            const grid = document.getElementById('stories-grid');
+            grid.innerHTML = '';
+            stories.forEach(story => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <img src="${story.img}" style="border-radius: 50%;">
+                        <div>
+                            <h3 style="font-size:18px;">${story.title}</h3>
+                            <div style="font-size: 12px; color: var(--text-dim);">ID: ${story.id}</div>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-action btn-edit" onclick="editStory(${story.id})"><i data-lucide="edit-3"></i> Изменить</button>
+                        <button class="btn-action btn-del" onclick="deleteStory(${story.id})"><i data-lucide="trash-2"></i> Удалить</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function renderOrders() {
+            const list = document.getElementById('orders-list');
+            list.innerHTML = '';
+            if (orders.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">Заказов пока нет</p>';
+                return;
+            }
+            orders.slice().reverse().forEach(order => {
+                const row = document.createElement('div');
+                row.className = 'order-row';
+                row.innerHTML = `
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>${order.user}</strong>
+                        <span>${order.total} с.</span>
+                    </div>
+                    <div style="font-size: 13px; margin-top: 5px;">${order.items}</div>
+                    <div class="order-meta">${order.date}</div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function loadSettings() {
+            document.getElementById('setting-phone').value = localStorage.getItem('adminPhone') || '996555123456';
+        }
+
+        function saveSettings() {
+            const phone = document.getElementById('setting-phone').value;
+            localStorage.setItem('adminPhone', phone);
+            alert('Настройки сохранены!');
+        }
+
+        // --- SCHEME LOGIC ---
+        let tableScheme = JSON.parse(localStorage.getItem('tableScheme')) || { image: '', tables: [] };
+
+        function initScheme() {
+            if (tableScheme.image) {
+                document.getElementById('scheme-img-url').value = tableScheme.image;
+                const img = document.getElementById('scheme-preview');
+                img.src = tableScheme.image;
+                img.style.opacity = '1';
+                document.getElementById('scheme-status').innerText = 'Схема загружена. Кликните для добавления стола.';
+                document.getElementById('scheme-status').style.color = '#10b981';
+            }
+            renderSchemeMarkers();
+            renderSchemeList();
+        }
+
+        function loadScheme() {
+            tableScheme.image = document.getElementById('scheme-img-url').value;
+            initScheme();
+        }
+
+        function handleSchemeUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tableScheme.image = e.target.result;
+                    initScheme();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addTableMarker(event) {
+            if (!tableScheme.image) {
+                alert('Сначала загрузите изображение схемы');
+                return;
+            }
+            
+            const rect = event.target.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 100;
+            const y = ((event.clientY - rect.top) / rect.height) * 100;
+            
+            const num = prompt("Введите номер или название стола:");
+            if (num) {
+                tableScheme.tables.push({
+                    id: Date.now(),
+                    num: num,
+                    x: x,
+                    y: y
+                });
+                renderSchemeMarkers();
+                renderSchemeList();
+            }
+        }
+
+        function renderSchemeMarkers() {
+            const container = document.getElementById('scheme-markers');
+            container.innerHTML = '';
+            tableScheme.tables.forEach(t => {
+                const marker = document.createElement('div');
+                marker.className = 'table-marker';
+                marker.style.left = t.x + '%';
+                marker.style.top = t.y + '%';
+                marker.innerText = t.num;
+                marker.title = "Удалить стол " + t.num;
+                marker.onclick = (e) => {
+                    e.stopPropagation();
+                    if(confirm('Удалить стол №' + t.num + '?')) {
+                        deleteSchemeTable(t.id);
+                    }
+                };
+                container.appendChild(marker);
+            });
+        }
+
+        function renderSchemeList() {
+            const list = document.getElementById('scheme-tables-list');
+            list.innerHTML = '';
+            if (tableScheme.tables.length === 0) {
+                list.innerHTML = '<p style="color:var(--text-dim); font-size: 14px;">Столов пока нет</p>';
+                return;
+            }
+            tableScheme.tables.forEach(t => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px 15px; border-radius:10px; margin-bottom:8px;';
+                row.innerHTML = `
+                    <span>Стол №${t.num}</span>
+                    <button style="width:auto; padding:5px 10px; font-size:12px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:none; border-radius:6px; cursor:pointer;" onclick="deleteSchemeTable(${t.id})">Удалить</button>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function deleteSchemeTable(id) {
+            tableScheme.tables = tableScheme.tables.filter(t => t.id !== id);
+            renderSchemeMarkers();
+            renderSchemeList();
+        }
+
+        function saveScheme() {
+            localStorage.setItem('tableScheme', JSON.stringify(tableScheme));
+            alert('Схема и столы успешно сохранены!');
+        }
+
+        function openModal(type = 'item') {
+            modalType = type;
+            editingId = null;
+            document.getElementById('modal-title').innerText = type === 'item' ? 'Новое блюдо' : 'Новый Сториз';
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-desc').value = '';
+            document.getElementById('item-price').value = '';
+            document.getElementById('item-img').value = '';
+            
+            // Hide menu-specific fields if it's a story
+            document.getElementById('item-price').style.display = type === 'item' ? 'block' : 'none';
+            document.getElementById('item-desc').style.display = type === 'item' ? 'block' : 'none';
+            document.getElementById('item-cat').style.display = type === 'item' ? 'block' : 'none';
+            
+            document.getElementById('modal-img-preview').innerHTML = '<span style="color:var(--text-dim); font-size:14px;">Предпросмотр фото</span>';
+            document.getElementById('item-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('item-modal').style.display = 'none';
+        }
+
+        function editItem(id) {
+            modalType = 'item';
+            const item = menu.find(i => i.id === id);
+            editingId = id;
+            document.getElementById('modal-title').innerText = 'Редактировать блюдо';
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-desc').value = item.desc;
+            document.getElementById('item-price').value = item.price;
+            document.getElementById('item-img').value = item.img;
+            
+            document.getElementById('item-price').style.display = 'block';
+            document.getElementById('item-desc').style.display = 'block';
+            document.getElementById('item-cat').style.display = 'block';
+
+            updatePreview(item.img);
+            document.getElementById('item-cat').value = item.cat;
+            document.getElementById('item-modal').style.display = 'flex';
+        }
+
+        function editStory(id) {
+            modalType = 'story';
+            const story = stories.find(s => s.id === id);
+            editingId = story.id;
+            document.getElementById('modal-title').innerText = 'Редактировать Сториз';
+            document.getElementById('item-name').value = story.title;
+            document.getElementById('item-img').value = story.img;
+            
+            document.getElementById('item-price').style.display = 'none';
+            document.getElementById('item-desc').style.display = 'none';
+            document.getElementById('item-cat').style.display = 'none';
+
+            updatePreview(story.img);
+            document.getElementById('item-modal').style.display = 'flex';
+        }
+
+        function deleteStory(id) {
+            if (confirm('Удалить этот сториз?')) {
+                stories = stories.filter(s => s.id !== id);
+                localStorage.setItem('customStories', JSON.stringify(stories));
+                renderStories();
+            }
+        }
+
+        function deleteItem(id) {
+            if (confirm('Удалить это блюдо?')) {
+                menu = menu.filter(i => i.id !== id);
+                localStorage.setItem('customMenu', JSON.stringify(menu));
+                renderMenu();
+            }
+        }
+
+        function saveItem() {
+            const name = document.getElementById('item-name').value;
+            if (modalType === 'item') {
+                const newItem = {
+                    id: editingId || Date.now(),
+                    name: name,
+                    desc: document.getElementById('item-desc').value,
+                    price: document.getElementById('item-price').value,
+                    img: document.getElementById('item-img').value || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=300&q=80',
+                    cat: document.getElementById('item-cat').value
+                };
+
+                if (editingId) {
+                    const index = menu.findIndex(i => i.id === editingId);
+                    menu[index] = newItem;
+                } else {
+                    menu.push(newItem);
+                }
+
+                localStorage.setItem('customMenu', JSON.stringify(menu));
+                renderMenu();
+            } else {
+                const newStory = {
+                    id: editingId || Date.now(),
+                    title: name,
+                    img: document.getElementById('item-img').value || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80',
+                };
+
+                if (editingId) {
+                    const index = stories.findIndex(s => s.id === editingId);
+                    stories[index] = newStory;
+                } else {
+                    stories.push(newStory);
+                }
+
+                localStorage.setItem('customStories', JSON.stringify(stories));
+                renderStories();
+            }
+            closeModal();
+        }
+
+        function generateImage() {
+            const name = document.getElementById('item-name').value;
+            if (!name) {
+                alert('Сначала введите название блюда');
+                return;
+            }
+            // Use a more reliable food image service with keywords
+            const query = encodeURIComponent(name);
+            const randomId = Math.floor(Math.random() * 1000);
+            const finalUrl = `https://loremflickr.com/500/500/food,dish,${query}?lock=${randomId}`;
+            
+            document.getElementById('item-img').value = finalUrl;
+            updatePreview(finalUrl);
+        }
+
+        function updatePreview(url) {
+            const preview = document.getElementById('modal-img-preview');
+            if (url) {
+                preview.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else {
+                preview.innerHTML = `<span style="color:var(--text-dim); font-size:14px;">Предпросмотр фото</span>`;
+            }
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const url = e.target.result;
+                    document.getElementById('item-img').value = url;
+                    updatePreview(url);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>
