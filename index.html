@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gourmet Go</title>
+    <title>CENTER PIZZA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&family=Dancing+Script:wght@700&family=Caveat:wght@700&family=Lobster&family=Great+Vibes&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -241,6 +242,26 @@
         
         .anim-fade { animation: quoteFadeIn 1s forwards; }
         .anim-slide { animation: quoteSlideIn 0.8s forwards; }
+
+        .call-waiter-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+        .call-waiter-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -269,13 +290,7 @@
     </div>
 
     <div class="app-container">
-        <div class="user-greeting" id="greeting-area" style="display: none; flex-direction: column; align-items: flex-start;">
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                <div class="user-avatar" id="user-initials">?</div>
-                <div class="greeting-text">
-                    <h2><span data-i18n="hello">Привет</span>, <span id="user-display-name">Гость</span>! <span class="edit-name" id="change-name-btn" title="Изменить имя"><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></span></h2>
-                </div>
-            </div>
+        <div class="user-greeting" id="greeting-area" style="display: none; flex-direction: column; align-items: center;">
             <div class="quote-container" id="quote-box">
                 <!-- Quotes will be injected here -->
             </div>
@@ -289,26 +304,7 @@
         </div>
 
         <section class="stories-container">
-            <div class="story-item">
-                <div class="story-ring"><img src="novelty_dishes_story_1777988971245.png" alt="Новинки"></div>
-                <span data-i18n="new">Новинки</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=200&h=200&q=80" alt="Акции"></div>
-                <span data-i18n="promo">Акции</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&h=200&q=80" alt="Бонусы"></div>
-                <span data-i18n="bonus">Бонусы</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&h=200&q=80" alt="Адрес"></div>
-                <span data-i18n="address">Адрес</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=200&h=200&q=80" alt="О нас"></div>
-                <span data-i18n="about">О нас</span>
-            </div>
+            <!-- Dynamically loaded from Supabase -->
         </section>
         <div class="categories-filter" id="cat-filter">
             <div class="filter-pill active" data-cat="all" data-i18n="all">Все</div>
@@ -321,7 +317,7 @@
         <main class="content">
             <div class="section-header"><h2 data-i18n="popular">Популярное сегодня</h2><a href="#" data-i18n="seeAll">См. все</a></div>
             <div class="menu-grid" id="main-menu-grid">
-                <!-- Dynamically loaded from Admin -->
+                <!-- Dynamically loaded from Supabase -->
             </div>
         </main>
         <nav class="bottom-nav">
@@ -335,8 +331,11 @@
                 </div>
                 <span data-i18n="navCart">Корзина</span>
             </div>
-            <div class="nav-item" id="open-profile"><i data-lucide="user"></i><span data-i18n="navProfile">Профиль</span></div>
         </nav>
+
+        <button class="call-waiter-btn" id="call-waiter-btn">
+            <i data-lucide="bell"></i>
+        </button>
 
         <!-- Cart Modal -->
         <div id="cart-modal" class="cart-modal">
@@ -384,6 +383,8 @@
                     <button class="checkout-btn" id="checkout-btn" data-i18n="checkout">Оформить заказ</button>
                 </div>
             </div>
+        </div>
+
         <!-- Pizza Builder Modal -->
         <div id="pizza-modal" class="pizza-modal">
             <div class="pizza-builder">
@@ -404,8 +405,6 @@
                     <div class="toppings-grid" id="right-toppings"></div>
                 </div>
                 <button class="checkout-btn" onclick="addCustomPizza()" data-i18n="addToCart">Добавить в корзину</button>
-            </div>
-        </div>
             </div>
         </div>
 
@@ -495,738 +494,316 @@
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // URL Params Detection
-            const urlParams = new URLSearchParams(window.location.search);
-            const tableNum = urlParams.get('table');
-            const isTableMode = !!tableNum;
+        const SUPABASE_URL = 'https://ihzeeilfmbgsddzcyywp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloemVlaWxmbWJnc2RkemN5eXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTU4NzMsImV4cCI6MjA5Mzg5MTg3M30.nv3DvgcgxHvk1J_W0U5o94LWY5w8nAcZTyAg92mz77M';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            // All variables at the top to avoid initialization errors
-            let cart = [];
+        document.addEventListener('DOMContentLoaded', async () => {
+            let cart = JSON.parse(localStorage.getItem('userCart')) || [];
             let favorites = JSON.parse(localStorage.getItem('userFavs')) || [];
-            let splitCount = 1;
-            const DEFAULT_STORIES = [
-                { id: 1, title: 'Новинки', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80', i18n: 'new' },
-                { id: 2, title: 'Акции', img: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=200&q=80', i18n: 'promo' },
-                { id: 3, title: 'Бонусы', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80', i18n: 'bonus' },
-                { id: 4, title: 'Адрес', img: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=200&q=80', i18n: 'address' },
-                { id: 5, title: 'О нас', img: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=200&q=80', i18n: 'about' }
-            ];
-            const STORIES = JSON.parse(localStorage.getItem('customStories')) || DEFAULT_STORIES;
-
-            const welcomeScreen = document.getElementById('welcome-screen');
-            const nameInput = document.getElementById('user-name-input');
-            const saveBtn = document.getElementById('save-name-btn');
-            const checkoutBtn = document.getElementById('checkout-btn');
-            const greetingArea = document.getElementById('greeting-area');
-            const userDisplayName = document.getElementById('user-display-name');
-            const userInitials = document.getElementById('user-initials');
+            let currentCategory = 'all';
 
             const cartBadge = document.querySelector('.badge');
             const cartList = document.getElementById('cart-items-list');
             const cartTotal = document.getElementById('cart-total');
             const cartModal = document.getElementById('cart-modal');
             const schemeModal = document.getElementById('scheme-modal');
-            const profileModal = document.getElementById('profile-modal');
+            const searchModal = document.getElementById('search-modal');
+            const resultsGrid = document.getElementById('results-grid');
+            const searchInput = document.getElementById('search-input');
+
+            // UI Elements
             const openCartBtn = document.getElementById('open-cart');
+            const closeCartBtn = document.getElementById('close-cart');
             const openSchemeBtn = document.getElementById('open-scheme');
-            const openProfileBtn = document.getElementById('open-profile');
+            const closeSchemeBtn = document.getElementById('close-scheme');
             const navHomeBtn = document.getElementById('nav-home-btn');
             const navFavBtn = document.getElementById('nav-fav-btn');
-            const closeCartBtn = document.getElementById('close-cart');
-            const closeSchemeBtn = document.getElementById('close-scheme');
-            const closeProfileBtn = document.getElementById('close-profile');
-            const splitCountEl = document.getElementById('split-count');
-            const splitResultEl = document.getElementById('split-result');
-            const splitSection = document.getElementById('split-section');
 
-            // Search elements
-            const openSearchBtn = document.getElementById('open-search');
-            const closeSearchBtn = document.getElementById('close-search');
-            const searchModal = document.getElementById('search-modal');
-            const searchInput = document.getElementById('search-input');
-            const resultsGrid = document.getElementById('results-grid');
+            // Data Fetching
+            async function fetchAllData() {
+                try {
+                    const { data: menu } = await supabase.from('menu').select('*').order('id', { ascending: true });
+                    const { data: stories } = await supabase.from('stories').select('*').order('id', { ascending: true });
+                    const { data: quotes } = await supabase.from('quotes').select('*');
+                    const { data: scheme } = await supabase.from('scheme').select('*').eq('id', 1).single();
+                    const { data: settings } = await supabase.from('settings').select('*');
 
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-
-            // Name Handling Logic
-
-            const translations = {
-                ru: { 
-                    title: 'Добро пожаловать!', desc: 'Рады видеть вас в "Центр Пицца". Пожалуйста, представьтесь для начала заказа.', placeholder: 'Ваше имя', btn: 'Начать заказ',
-                    hello: 'Привет', tagline: 'Что закажем сегодня?', new: 'Новинки', promo: 'Акции', bonus: 'Бонусы', address: 'Адрес', about: 'О нас',
-                    all: 'Все', fav: 'Избранное', first: 'Первые блюда', second: 'Вторые блюда', drinks: 'Напитки', desserts: 'Десерты', snacks: 'Закуски',
-                    popular: 'Популярное сегодня', seeAll: 'См. все', navHome: 'Главная', navScheme: 'Бронь', navCart: 'Корзина', navProfile: 'Профиль',
-                    cartTitle: 'Корзина', total: 'Итого:', splitBy: 'Разделить на:', checkout: 'Оформить заказ', each: 'С каждого:',
-                    pizzaTitle: 'Конструктор Пиццы', leftSide: 'Левая сторона:', rightSide: 'Правая сторона:', addToCart: 'Добавить в корзину',
-                    schemeTitle: 'Бронирование стола', resTable: 'Бронь: Стол №', resName: 'Ваше имя', resGuests: 'Количество гостей', bookBtn: 'Забронировать через WhatsApp',
-                    regCustomer: 'Постоянный клиент', changeName: 'Изменить имя', changeNameDesc: 'Настройте свое отображаемое имя',
-                    appLang: 'Язык приложения', appLangDesc: 'Выбрать другой язык', myFavs: 'Мои фавориты', myFavsDesc: 'Список ваших любимых блюд',
-                    addrPlc: 'Адрес доставки', aptPlc: 'Кв/Офис', floorPlc: 'Подъезд/Этаж', tableLabel: 'Стол №', phonePlc: 'Телефон (+996...)',
-                    item1Name: 'Королевский Бургер', item1Desc: 'Сочная говядина, чеддер, фирменный соус',
-                    item2Name: 'Маргарита Премиум', item2Desc: 'Свежие томаты, моцарелла, базилик',
-                    item3Name: 'Сет "Токио"', item3Desc: 'Лосось, тунец, авокадо, 16 шт.',
-                    item4Name: 'Шоколадный Фондан', item4Desc: 'Теплый шоколад с малиновым соусом',
-                    item5Name: 'Борщ "Украинский"', item5Desc: 'Свекла, говядина, свежая сметана',
-                    item6Name: 'Шорпо из баранины', item6Desc: 'Наваристый бульон, отборная баранина и овощи',
-                    item7Name: 'Пицца центр', item7Desc: '1090 гр, 40 см',
-                    item8Name: 'Пицца 50/50', item8Desc: 'Выберите два разных вкуса для каждой стороны'
-                },
-                kg: { 
-                    title: 'Кош келиңиздер!', desc: '"Центр Пиццага" кош келиңиз. Буйрутма берүү үчүн өзүңүздү тааныштырыңыз.', placeholder: 'Сиздин атыңыз', btn: 'Баштоо',
-                    hello: 'Салам', tagline: 'Бүгүн эмне заказ кылабыз?', new: 'Жаңылыктар', promo: 'Акциялар', bonus: 'Бонустар', address: 'Дареги', about: 'Биз жөнүндө',
-                    all: 'Баары', fav: 'Тандалган', first: 'Биринчи тамактар', second: 'Экинчи тамактар', drinks: 'Суусундуктар', desserts: 'Таттуулар', snacks: 'Закускалар',
-                    popular: 'Бүгүнкү популярдуу', seeAll: 'Баарын көрүү', navHome: 'Башкы', navScheme: 'Брондоо', navCart: 'Корзина', navProfile: 'Профиль',
-                    cartTitle: 'Корзина', total: 'Жалпы:', splitBy: 'Бөлүштүрүү:', checkout: 'Заказ берүү', each: 'Ар бирине:',
-                    pizzaTitle: 'Пицца Конструктору', leftSide: 'Сол жагы:', rightSide: 'Оң жагы:', addToCart: 'Корзинага кошуу',
-                    schemeTitle: 'Столду брондоо', resTable: 'Бронь: Стол №', resName: 'Сиздин атыңыз', resGuests: 'Коноктордун саны', bookBtn: 'WhatsApp аркылуу брондоо',
-                    regCustomer: 'Туруктуу кардар', changeName: 'Атын өзгөртүү', changeNameDesc: 'Өзүңүздүн атыңызды ырастаңыз',
-                    appLang: 'Колдонмо тили', appLangDesc: 'Башка тилди тандаңыз', myFavs: 'Тандалгандарым', myFavsDesc: 'Сүйүктүү тамактарыңыздын тизмеси',
-                    addrPlc: 'Жеткирүү дареги', aptPlc: 'Батир/Офис', floorPlc: 'Подъезд/Кабат', tableLabel: 'Стол №', phonePlc: 'Телефон (+996...)',
-                    item1Name: 'Королдук Бургер', item1Desc: 'Ширелүү уй эти, чеддер, фирмалык соус',
-                    item2Name: 'Маргарита Премиум', item2Desc: 'Жаңы помидорлор, моцарелла, базилик',
-                    item3Name: 'Сет "Токио"', item3Desc: 'Лосось, тунец, авокадо, 16 даана.',
-                    item4Name: 'Шоколаддуу Фондан', item4Desc: 'Малина соусу менен жылуу шоколад',
-                    item5Name: 'Борщ "Украинский"', item5Desc: 'Кызылча, уй эти, жаңы каймак',
-                    item6Name: 'Кой этинен шорпо', item6Desc: 'Наваристый бульон, тандалган кой эти жана жашылчалар',
-                    item7Name: 'Пицца борбору', item7Desc: '1090 гр, 40 см',
-                    item8Name: 'Пицца 50/50', item8Desc: 'Ар бир тарап үчүн эки башка даам тандаңыз'
-                },
-                en: { 
-                    title: 'Welcome!', desc: 'Happy to see you at "Center Pizza". Please introduce yourself to start ordering.', placeholder: 'Your name', btn: 'Start Ordering',
-                    hello: 'Hello', tagline: 'What shall we order today?', new: 'New', promo: 'Promo', bonus: 'Bonuses', address: 'Address', about: 'About us',
-                    all: 'All', fav: 'Favorites', first: 'First Courses', second: 'Main Courses', drinks: 'Drinks', desserts: 'Desserts', snacks: 'Snacks',
-                    popular: 'Popular Today', seeAll: 'See all', navHome: 'Home', navScheme: 'Book', navCart: 'Cart', navProfile: 'Profile',
-                    cartTitle: 'Cart', total: 'Total:', splitBy: 'Split by:', checkout: 'Place Order', each: 'Each:',
-                    pizzaTitle: 'Pizza Builder', leftSide: 'Left side:', rightSide: 'Right side:', addToCart: 'Add to Cart',
-                    schemeTitle: 'Table Reservation', resTable: 'Booking: Table #', resName: 'Your name', resGuests: 'Number of guests', bookBtn: 'Book via WhatsApp',
-                    regCustomer: 'Regular Customer', changeName: 'Change Name', changeNameDesc: 'Customize your display name',
-                    appLang: 'App Language', appLangDesc: 'Select another language', myFavs: 'My Favorites', myFavsDesc: 'List of your liked dishes',
-                    addrPlc: 'Delivery Address', aptPlc: 'Apt/Office', floorPlc: 'Entrance/Floor', tableLabel: 'Table #', phonePlc: 'Phone (+996...)',
-                    item1Name: 'Royal Burger', item1Desc: 'Juicy beef, cheddar, signature sauce',
-                    item2Name: 'Margherita Premium', item2Desc: 'Fresh tomatoes, mozzarella, basil',
-                    item3Name: 'Set "Tokyo"', item3Desc: 'Salmon, tuna, avocado, 16 pcs.',
-                    item4Name: 'Chocolate Fondant', item4Desc: 'Warm chocolate with raspberry sauce',
-                    item5Name: 'Borsch "Ukrainian"', item5Desc: 'Beetroot, beef, fresh sour cream',
-                    item6Name: 'Mutton Shorpo', item6Desc: 'Rich broth, selected mutton and vegetables',
-                    item7Name: 'Pizza Center', item7Desc: '1090 g, 40 cm',
-                    item8Name: 'Pizza 50/50', item8Desc: 'Choose two different flavors for each side'
+                    return { menu: menu || [], stories: stories || [], quotes: quotes?.map(q => q.text) || [], scheme, settings };
+                } catch (e) {
+                    console.error("Supabase Error:", e);
+                    return { menu: [], stories: [], quotes: [], scheme: null, settings: [] };
                 }
-            };
+            }
 
-            window.setLang = (lang) => {
-                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-                const buttons = document.querySelectorAll('.lang-btn');
-                buttons.forEach(btn => {
-                    if (btn.innerText.toLowerCase().includes(lang === 'ru' ? 'рус' : lang === 'kg' ? 'кыр' : 'eng')) {
-                        btn.classList.add('active');
-                    }
-                });
-                const t = translations[lang];
-                if (!t) return;
-                document.getElementById('well-title').innerText = t.title;
-                document.getElementById('well-desc').innerText = t.desc;
-                document.getElementById('user-name-input').placeholder = t.placeholder;
-                document.getElementById('save-name-btn').innerText = t.btn;
-                document.querySelectorAll('[data-i18n]').forEach(el => {
-                    const key = el.getAttribute('data-i18n');
-                    if (t[key]) el.innerText = t[key];
-                });
-                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                    const key = el.getAttribute('data-i18n-placeholder');
-                    if (t[key]) el.placeholder = t[key];
-                });
-                localStorage.setItem('userLang', lang);
-                renderMenu();
-            };
+            const appData = await fetchAllData();
 
-            const checkUser = () => {
-                const savedName = localStorage.getItem('userName');
-                const savedLang = localStorage.getItem('userLang') || 'ru';
-                setLang(savedLang);
-                if (savedName) {
-                    document.body.classList.add('has-name');
-                    greetingArea.style.display = 'flex';
-                    userDisplayName.innerText = savedName;
-                    userInitials.innerText = savedName.charAt(0).toUpperCase();
-                    const pName = document.getElementById('profile-name');
-                    const pAvatar = document.getElementById('profile-avatar');
-                    if (pName) pName.innerText = savedName;
-                    if (pAvatar) pAvatar.innerText = savedName.charAt(0).toUpperCase();
-                } else {
-                    document.body.classList.remove('has-name');
-                }
-                if (isTableMode) {
-                    document.getElementById('table-fields').style.display = 'block';
-                    document.getElementById('delivery-fields').style.display = 'none';
-                    document.getElementById('table-number-display').innerText = tableNum;
-                    splitSection.style.display = 'flex';
-                } else {
-                    document.getElementById('table-fields').style.display = 'none';
-                    document.getElementById('delivery-fields').style.display = 'block';
-                    splitSection.style.display = 'none';
-                }
-            };
+            function renderStories() {
+                const container = document.querySelector('.stories-container');
+                if (!container) return;
+                container.innerHTML = '';
+                appData.stories.forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'story-item';
+                    item.innerHTML = `<div class="story-ring"><img src="${s.image_url}"></div><span>${s.title}</span>`;
+                    container.appendChild(item);
+                });
+            }
 
-            const renderMenu = () => {
-                const DEFAULT_MENU = [
-                    { id: 1, name: 'Королевский Бургер', desc: 'Сочная говядина, чеддер, фирменный соус', price: 2450, cat: 'second', img: 'assets/burger.png', i18n: 'item1' },
-                    { id: 2, name: 'Маргарита Премиум', desc: 'Свежие томаты, моцарелла, базилик', price: 3100, cat: 'second', img: 'assets/pizza.png', i18n: 'item2' },
-                    { id: 3, name: 'Сет "Токио"', desc: 'Лосось, тунец, авокадо, 16 шт.', price: 5800, cat: 'snacks', img: 'assets/sushi.png', i18n: 'item3' },
-                    { id: 4, name: 'Шоколадный Фондан', desc: 'Теплый шоколад с малиновым соусом', price: 1850, cat: 'desserts', img: 'assets/dessert.png', i18n: 'item4' },
-                    { id: 5, name: 'Борщ "Украинский"', desc: 'Свекла, говядина, свежая сметана', price: 850, cat: 'first', img: 'assets/burger.png', i18n: 'item5' },
-                    { id: 6, name: 'Шорпо из баранины', desc: 'Наваристый бульон, отборная баранина и овощи', price: 950, cat: 'first', img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=300&q=80', i18n: 'item6' },
-                    { id: 7, name: 'Пицца центр', desc: '1090 гр, 40 см', price: 850, cat: 'second', img: 'assets/pizza.png', i18n: 'item7' }
-                ];
-                const menuData = JSON.parse(localStorage.getItem('customMenu')) || DEFAULT_MENU;
+            function renderMenu(category = 'all') {
                 const grid = document.getElementById('main-menu-grid');
                 if (!grid) return;
                 grid.innerHTML = '';
-                const currentLang = localStorage.getItem('userLang') || 'ru';
-                const t = translations[currentLang];
-                menuData.forEach(item => {
+                let filtered = category === 'all' ? appData.menu : 
+                               category === 'fav' ? appData.menu.filter(i => favorites.includes(i.name)) :
+                               appData.menu.filter(i => i.category === category);
+                
+                filtered.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'menu-card';
-                    card.dataset.category = item.cat;
-                    const name = t[item.i18n + 'Name'] || item.name;
-                    const desc = t[item.i18n + 'Desc'] || item.desc;
-                    const priceDisplay = isNaN(item.price) ? item.price : Number(item.price).toLocaleString();
+                    const isFav = favorites.includes(item.name);
                     card.innerHTML = `
                         <div class="card-image">
-                            <img src="${item.img}" alt="${name}">
-                            <span class="rating"><i data-lucide="star"></i> 4.9</span>
-                            <button class="favorite-btn"><i data-lucide="heart"></i></button>
+                            <img src="${item.image_url}">
+                            <button class="favorite-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${item.name}')"><i data-lucide="heart"></i></button>
                         </div>
                         <div class="card-info">
-                            <h3>${name}</h3>
-                            <p>${desc}</p>
+                            <h3>${item.name}</h3>
+                            <p>${item.description}</p>
                             <div class="card-footer">
-                                <span class="price">${priceDisplay} с.</span>
-                                <button class="add-btn"><i data-lucide="plus"></i></button>
+                                <span class="price">${item.price} с.</span>
+                                <button class="add-btn" onclick="addToCart('${item.name}', ${item.price}, '${item.image_url}')"><i data-lucide="plus"></i></button>
                             </div>
                         </div>
                     `;
                     grid.appendChild(card);
                 });
-                const pizza50 = document.createElement('div');
-                pizza50.className = 'menu-card';
-                pizza50.dataset.category = 'second';
-                pizza50.innerHTML = `
-                    <div class="card-image"><img src="assets/pizza.png" alt="Half Half"><span class="rating"><i data-lucide="star"></i> 5.0</span><button class="favorite-btn"><i data-lucide="heart"></i></button></div>
-                    <div class="card-info"><h3 data-i18n="item8Name">${t.item8Name}</h3><p data-i18n="item8Desc">${t.item8Desc}</p><div class="card-footer"><span class="price">3 500 с.</span><button class="add-btn pizza-config-btn"><i data-lucide="plus"></i></button></div></div>
-                `;
-                grid.appendChild(pizza50);
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-                bindMenuEvents();
+                lucide.createIcons();
+            }
+
+            window.toggleFav = (e, name) => {
+                e.stopPropagation();
+                if (favorites.includes(name)) favorites = favorites.filter(f => f !== name);
+                else favorites.push(name);
+                localStorage.setItem('userFavs', JSON.stringify(favorites));
+                renderMenu(currentCategory);
             };
 
-            const bindMenuEvents = () => {
-                document.querySelectorAll('.favorite-btn').forEach(btn => {
-                    const card = btn.closest('.menu-card');
-                    const itemName = card.querySelector('h3').innerText;
-                    if (favorites.includes(itemName)) btn.classList.add('active');
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (favorites.includes(itemName)) {
-                            favorites = favorites.filter(f => f !== itemName);
-                            btn.classList.remove('active');
-                        } else {
-                            favorites.push(itemName);
-                            btn.classList.add('active');
-                        }
-                        localStorage.setItem('userFavs', JSON.stringify(favorites));
-                    };
-                });
-                document.querySelectorAll('.add-btn:not(.pizza-config-btn)').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        addToCart(btn.closest('.menu-card'));
-                        const originalIcon = btn.innerHTML;
-                        btn.innerHTML = '<i data-lucide="check"></i>';
-                        if (typeof lucide !== 'undefined') lucide.createIcons();
-                        setTimeout(() => { 
-                            btn.innerHTML = originalIcon; 
-                            if (typeof lucide !== 'undefined') lucide.createIcons(); 
-                        }, 1000);
-                    };
-                });
-                document.querySelectorAll('.pizza-config-btn').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        pizzaModal.style.display = 'flex';
-                        renderToppings('left-toppings', 'left');
-                        renderToppings('right-toppings', 'right');
-                        updatePizzaPreview();
-                    };
-                });
-            };
-
-            saveBtn.addEventListener('click', () => {
-                const name = nameInput.value.trim();
-                if (name) {
-                    localStorage.setItem('userName', name);
-                    checkUser();
-                } else {
-                    alert('Пожалуйста, введите ваше имя');
-                }
-            });
-
-            nameInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') saveBtn.click();
-            });
-
-            checkoutBtn.addEventListener('click', () => {
-                if (cart.length === 0) return;
-                const userName = localStorage.getItem('userName') || 'Гость';
-                const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-                let message = `*Заказ от: ${userName}*%0A%0A`;
-                cart.forEach(item => {
-                    message += `• ${item.name} x${item.qty} — ${item.price * item.qty} с.%0A`;
-                });
-                message += `%0A*Итого: ${total} с.*`;
-                if (isTableMode) {
-                    if (splitCount > 1) {
-                        message += `%0A(Разделено на ${splitCount} чел: по ${Math.round(total/splitCount)} с.)`;
-                    }
-                    message += `%0A%0A*СТОЛ №${tableNum}*`;
-                } else {
-                    const addr = document.getElementById('delivery-address').value;
-                    const phone = document.getElementById('delivery-phone').value;
-                    if (addr && phone.trim().length >= 4) {
-                        message += `%0A%0A*Доставка:*%0A${addr}`;
-                        message += `%0AТелефон: ${phone}`;
-                    } else {
-                        alert('Пожалуйста, укажите адрес доставки и контактный телефон');
-                        return;
-                    }
-                }
-                const allOrders = JSON.parse(localStorage.getItem('allOrders')) || [];
-                allOrders.push({
-                    user: userName,
-                    items: cart.map(i => `${i.name} x${i.qty}`).join(', '),
-                    total: total,
-                    date: new Date().toLocaleString()
-                });
-                localStorage.setItem('allOrders', JSON.stringify(allOrders));
-                const phone = localStorage.getItem('adminPhone') || "996555123456"; 
-                window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
-            });
-
-            document.getElementById('change-name-btn').addEventListener('click', () => {
-                localStorage.removeItem('userName');
-                location.reload();
-            });
-
-            checkUser();
-
-            const updateCartUI = () => {
-                const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-                cartBadge.innerText = totalItems;
-                if (cart.length === 0) {
-                    cartList.innerHTML = '<div class="empty-cart"><i data-lucide="shopping-cart" style="width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.3;"></i><p>Ваша корзина пуста</p></div>';
-                    cartTotal.innerText = '0 с.';
-                    splitResultEl.innerText = 'С каждого: 0 с.';
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                    return;
-                }
-                cartList.innerHTML = '';
-                let total = 0;
-                cart.forEach((item, index) => {
-                    const itemTotal = item.price * item.qty;
-                    total += itemTotal;
-                    const row = document.createElement('div');
-                    row.className = 'cart-item-row';
-                    row.innerHTML = `
-                        <img src="${item.img}" class="cart-item-img">
-                        <div class="cart-item-info">
-                            <h4>${item.name}</h4>
-                            <p>${item.price} с.</p>
-                        </div>
-                        <div class="qty-controls">
-                            <button class="qty-btn" onclick="changeQty(${index}, -1)"><i data-lucide="minus"></i></button>
-                            <span>${item.qty}</span>
-                            <button class="qty-btn" onclick="changeQty(${index}, 1)"><i data-lucide="plus"></i></button>
-                        </div>
-                    `;
-                    cartList.appendChild(row);
-                });
-                cartTotal.innerText = total + ' с.';
-                splitResultEl.innerText = `С каждого: ${Math.round(total / splitCount)} с.`;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            };
-
-            document.getElementById('split-plus').addEventListener('click', () => {
-                splitCount++;
-                splitCountEl.innerText = splitCount;
-                updateCartUI();
-            });
-
-            document.getElementById('split-minus').addEventListener('click', () => {
-                if (splitCount > 1) {
-                    splitCount--;
-                    splitCountEl.innerText = splitCount;
-                    updateCartUI();
-                }
-            });
-
-            window.changeQty = (index, delta) => {
-                cart[index].qty += delta;
-                if (cart[index].qty <= 0) {
-                    cart.splice(index, 1);
-                }
+            window.addToCart = (name, price, img) => {
+                const existing = cart.find(i => i.name === name);
+                if (existing) existing.qty++;
+                else cart.push({ name, price, img, qty: 1 });
                 updateCartUI();
             };
 
-            const addToCart = (card) => {
-                const name = card.querySelector('h3').innerText;
-                const priceText = card.querySelector('.price').innerText;
-                const price = parseInt(priceText.replace(/[^\d]/g, ''));
-                const img = card.querySelector('img').src;
-                const existingItem = cart.find(item => item.name === name);
-                if (existingItem) {
-                    existingItem.qty++;
-                } else {
-                    cart.push({ name, price, img, qty: 1 });
+            function updateCartUI() {
+                localStorage.setItem('userCart', JSON.stringify(cart));
+                if (cartBadge) cartBadge.innerText = cart.reduce((a, b) => a + b.qty, 0);
+                if (cartList) {
+                    cartList.innerHTML = '';
+                    let total = 0;
+                    cart.forEach((item, idx) => {
+                        total += item.price * item.qty;
+                        const el = document.createElement('div');
+                        el.className = 'cart-item';
+                        el.innerHTML = `
+                            <img src="${item.img}">
+                            <div class="cart-item-details">
+                                <h4>${item.name}</h4>
+                                <p>${item.price} с.</p>
+                            </div>
+                            <div class="cart-item-qty">
+                                <button onclick="changeQty(${idx}, -1)">-</button>
+                                <span>${item.qty}</span>
+                                <button onclick="changeQty(${idx}, 1)">+</button>
+                            </div>
+                        `;
+                        cartList.appendChild(el);
+                    });
+                    if (cartTotal) cartTotal.innerText = total + ' с.';
                 }
+            }
+
+            window.changeQty = (idx, delta) => {
+                cart[idx].qty += delta;
+                if (cart[idx].qty <= 0) cart.splice(idx, 1);
                 updateCartUI();
             };
 
-            openCartBtn.addEventListener('click', () => {
-                cartModal.style.display = 'flex';
-                updateCartUI();
-            });
-
-            closeCartBtn.addEventListener('click', () => {
-                cartModal.style.display = 'none';
-            });
-
-            openSearchBtn.addEventListener('click', () => {
-                searchModal.style.display = 'flex';
-                searchInput.focus();
-                updateSearch('');
-            });
-
-            closeSearchBtn.addEventListener('click', () => {
-                searchModal.style.display = 'none';
-                const activePill = document.querySelector('.filter-pill.active');
-                if (activePill) activePill.click();
-            });
-
-            // Scheme / Reservation Logic
-            const renderClientScheme = () => {
-                const schemeData = JSON.parse(localStorage.getItem('tableScheme')) || { image: '', tables: [] };
-                const img = document.getElementById('client-scheme-img');
-                const container = document.getElementById('client-scheme-markers');
-                const emptyMsg = document.getElementById('client-scheme-empty');
-                
-                if (!schemeData.image) {
-                    img.style.display = 'none';
-                    emptyMsg.style.display = 'block';
-                    return;
-                }
-                
-                img.src = schemeData.image;
-                img.style.display = 'block';
-                emptyMsg.style.display = 'none';
-                container.innerHTML = '';
-                
-                schemeData.tables.forEach(t => {
-                    const marker = document.createElement('div');
-                    marker.className = 'table-marker';
-                    marker.style.position = 'absolute';
-                    marker.style.left = t.x + '%';
-                    marker.style.top = t.y + '%';
-                    marker.style.width = '30px';
-                    marker.style.height = '30px';
-                    marker.style.background = 'var(--accent)';
-                    marker.style.color = 'white';
-                    marker.style.borderRadius = '50%';
-                    marker.style.display = 'flex';
-                    marker.style.justifyContent = 'center';
-                    marker.style.alignItems = 'center';
-                    marker.style.fontSize = '12px';
-                    marker.style.fontWeight = 'bold';
-                    marker.style.transform = 'translate(-50%, -50%)';
-                    marker.style.cursor = 'pointer';
-                    marker.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
-                    marker.innerText = t.num;
-                    
-                    marker.onclick = () => {
-                        document.getElementById('res-table-num').innerText = t.num;
-                        document.getElementById('reservation-form-modal').style.display = 'flex';
-                        // Pre-fill name if exists
-                        const savedName = localStorage.getItem('userName');
-                        if (savedName) document.getElementById('res-name').value = savedName;
-                    };
-                    container.appendChild(marker);
-                });
-            };
-
-            openSchemeBtn.addEventListener('click', () => {
-                schemeModal.style.display = 'flex';
-                renderClientScheme();
-            });
-
-            closeSchemeBtn.addEventListener('click', () => {
-                schemeModal.style.display = 'none';
-            });
-
-            document.getElementById('submit-res-btn').addEventListener('click', () => {
-                const table = document.getElementById('res-table-num').innerText;
-                const name = document.getElementById('res-name').value;
-                const date = document.getElementById('res-date').value;
-                const time = document.getElementById('res-time').value;
-                const guests = document.getElementById('res-guests').value;
-                
-                if (!name || !date || !time || !guests) {
-                    alert('Пожалуйста, заполните все поля');
-                    return;
-                }
-                
-                const message = `*Бронирование стола*%0A%0A*Стол №${table}*%0A*Имя:* ${name}%0A*Дата:* ${date}%0A*Время:* ${time}%0A*Гостей:* ${guests}`;
-                const phone = localStorage.getItem('adminPhone') || "996555123456";
-                window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
-                document.getElementById('reservation-form-modal').style.display = 'none';
-                schemeModal.style.display = 'none';
-            });
-
-            openProfileBtn.addEventListener('click', () => {
-                profileModal.style.display = 'flex';
-            });
-
-            closeProfileBtn.addEventListener('click', () => {
-                profileModal.style.display = 'none';
-            });
-
-            navFavBtn.addEventListener('click', () => {
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                navFavBtn.classList.add('active');
-                applyCategoryFilter('fav');
-                window.scrollTo({ top: document.getElementById('cat-filter').offsetTop - 80, behavior: 'smooth' });
-            });
-
-            navHomeBtn.addEventListener('click', () => {
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                navHomeBtn.classList.add('active');
-                applyCategoryFilter('all');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-
-            const applyCategoryFilter = (category) => {
-                const pills = document.querySelectorAll('.filter-pill');
-                pills.forEach(p => {
-                    if (p.getAttribute('data-cat') === category) p.classList.add('active');
-                    else p.classList.remove('active');
-                });
-
-                const cards = document.querySelectorAll('.menu-card');
-                cards.forEach(card => {
-                    const itemName = card.querySelector('h3').innerText;
-                    if (category === 'all') {
-                        card.style.display = 'block';
-                    } else if (category === 'fav') {
-                        card.style.display = favorites.includes(itemName) ? 'block' : 'none';
-                    } else {
-                        card.style.display = (card.getAttribute('data-category') === category) ? 'block' : 'none';
-                    }
-                });
-            };
-
-            const updateSearch = (query) => {
-                resultsGrid.innerHTML = '';
-                const q = query.toLowerCase();
-                const allCards = document.querySelectorAll('.menu-grid .menu-card');
-                
-                allCards.forEach(card => {
-                    const name = card.querySelector('h3').innerText.toLowerCase();
-                    const desc = card.querySelector('p').innerText.toLowerCase();
-                    if (name.includes(q) || desc.includes(q)) {
-                        const clone = card.cloneNode(true);
-                        // Re-bind events for the clone
-                        clone.querySelector('.add-btn').onclick = () => addToCart(clone);
-                        const favBtn = clone.querySelector('.favorite-btn');
-                        const itemName = name; // simplified for matching
-                        if (favorites.includes(card.querySelector('h3').innerText)) favBtn.classList.add('active');
-                        favBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            // Reuse main fav logic or simplified
-                            card.querySelector('.favorite-btn').click();
-                            favBtn.classList.toggle('active');
-                        };
-                        resultsGrid.appendChild(clone);
-                    }
-                });
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            };
-
-            searchInput.addEventListener('input', (e) => updateSearch(e.target.value));
-
-            // Prevent scroll on body when cart, search or profile is open
-            const observer = new MutationObserver(() => {
-                const isOpen = cartModal.style.display === 'flex' || searchModal.style.display === 'flex' || profileModal.style.display === 'flex';
-                document.body.style.overflow = isOpen ? 'hidden' : '';
-            });
-            observer.observe(cartModal, { attributes: true, attributeFilter: ['style'] });
-            observer.observe(searchModal, { attributes: true, attributeFilter: ['style'] });
-            observer.observe(profileModal, { attributes: true, attributeFilter: ['style'] });
-
-            // Filtering Logic
-            const pills = document.querySelectorAll('.filter-pill');
-            pills.forEach(pill => {
-                pill.addEventListener('click', () => {
-                    applyCategoryFilter(pill.getAttribute('data-cat'));
-                });
-            });
-
-            // Drag to scroll functionality (X and Y)
-            const setupDragScroll = (selector, isVertical = false) => {
-                const slider = (selector === 'body') ? document.documentElement : document.querySelector(selector);
-                if (!slider) return;
-                let isDown = false;
-                let startX, startY;
-                let scrollLeft, scrollTop;
-                let moved = false;
-
-                const start = (e) => {
-                    if (e.target.closest('.add-btn') || e.target.closest('.favorite-btn') || e.target.closest('.qty-btn')) return;
-                    isDown = true;
-                    const pageX = e.pageX || (e.touches && e.touches[0].pageX);
-                    const pageY = e.pageY || (e.touches && e.touches[0].pageY);
-                    startX = pageX - (slider.offsetLeft || 0);
-                    startY = pageY - (slider.offsetTop || 0);
-                    scrollLeft = slider.scrollLeft;
-                    scrollTop = window.scrollY;
-                    moved = false;
-                };
-
-                const end = () => {
-                    isDown = false;
-                };
-
-                const move = (e) => {
-                    if (!isDown) return;
-                    const pageX = e.pageX || (e.touches && e.touches[0].pageX);
-                    const pageY = e.pageY || (e.touches && e.touches[0].pageY);
-                    const x = pageX - (slider.offsetLeft || 0);
-                    const y = pageY - (slider.offsetTop || 0);
-                    const walkX = (x - startX) * 2;
-                    const walkY = (y - startY) * 2;
-                    
-                    if (Math.abs(walkX) > 5 || Math.abs(walkY) > 5) {
-                        moved = true;
-                        e.preventDefault();
-                    }
-                    
-                    slider.scrollLeft = scrollLeft - walkX;
-                    if (isVertical) {
-                        window.scrollTo(0, scrollTop - walkY);
-                    }
-                };
-
-                slider.addEventListener('mousedown', start);
-                slider.addEventListener('touchstart', start, {passive: true});
-                window.addEventListener('mouseup', end);
-                window.addEventListener('touchend', end);
-                window.addEventListener('mousemove', move, {passive: false});
-                window.addEventListener('touchmove', move, {passive: false});
-
-                slider.addEventListener('click', (e) => {
-                    if (moved) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                }, true);
-            };
-
-            setupDragScroll('.stories-container');
-            setupDragScroll('.categories-filter');
-            // Removed vertical body drag-scroll to fix mobile jerking (using native scroll instead)
-
-            const pizzaModal = document.getElementById('pizza-modal');
-            const toppings = [
-                { name: 'Маргарита', img: 'assets/pizza.png' },
-                { name: 'Пепперони', img: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=200&q=80' },
-                { name: '4 Сыра', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80' },
-                { name: 'Грибная', img: 'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?auto=format&fit=crop&w=200&q=80' },
-                { name: 'Гавайская', img: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=200&q=80' },
-                { name: 'Острая', img: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=200&q=80' }
-            ];
-
-            let selectedLeft = toppings[0];
-            let selectedRight = toppings[1];
-
-            const renderToppings = (containerId, side) => {
-                const container = document.getElementById(containerId);
-                container.innerHTML = '';
-                toppings.forEach(t => {
-                    const opt = document.createElement('div');
-                    opt.className = `topping-opt ${((side === 'left' ? selectedLeft : selectedRight).name === t.name) ? 'selected' : ''}`;
-                    opt.innerText = t.name;
-                    opt.onclick = () => {
-                        if (side === 'left') selectedLeft = t; else selectedRight = t;
-                        updatePizzaPreview();
-                        renderToppings('left-toppings', 'left');
-                        renderToppings('right-toppings', 'right');
-                    };
-                    container.appendChild(opt);
-                });
-            };
-
-            const updatePizzaPreview = () => {
-                document.getElementById('preview-left').style.backgroundImage = `url(${selectedLeft.img})`;
-                document.getElementById('preview-right').style.backgroundImage = `url(${selectedRight.img})`;
-            };
-
-            window.closePizza = () => {
-                pizzaModal.style.display = 'none';
-            };
-
-            window.addCustomPizza = () => {
-                const name = `Пицца 50/50 (${selectedLeft.name} + ${selectedRight.name})`;
-                const price = 3500;
-                const img = 'assets/pizza.png';
-                
-                const existingItem = cart.find(item => item.name === name);
-                if (existingItem) {
-                    existingItem.qty++;
-                } else {
-                    cart.push({ name, price, img, qty: 1 });
-                }
-                updateCartUI();
-                closePizza();
-            };
-
-            renderMenu();
-
-            // Quote Rotation Logic
+            // Quotes Logic
             const quoteBox = document.getElementById('quote-box');
             const fonts = ['font-elegant', 'font-cursive', 'font-playful', 'font-bold', 'font-fancy'];
             const anims = ['anim-fade', 'anim-slide'];
-            let currentQuoteIdx = 0;
+            let qIdx = 0;
 
-            const updateQuote = () => {
-                const appQuotes = JSON.parse(localStorage.getItem('appQuotes')) || [
-                    "Лучшая пицца в городе — специально для вас!",
-                    "Время для вкусных открытий!",
-                    "С любовью из печи в ваши руки.",
-                    "Вкус, который вдохновляет."
-                ];
-                
-                if (appQuotes.length === 0) {
-                    quoteBox.innerHTML = '<p class="quote-text active" style="font-size: 16px; opacity: 0.5;">Что закажем сегодня?</p>';
+            function rotateQuotes() {
+                if (!quoteBox) return;
+                if (!appData.quotes || !appData.quotes.length) {
+                    quoteBox.innerHTML = '<p class="quote-text active">Что закажем сегодня?</p>';
                     return;
                 }
+                const q = appData.quotes[qIdx];
+                const f = fonts[Math.floor(Math.random() * fonts.length)];
+                const a = anims[Math.floor(Math.random() * anims.length)];
+                quoteBox.innerHTML = `<p class="quote-text active ${f} ${a}">${q}</p>`;
+                qIdx = (qIdx + 1) % appData.quotes.length;
+            }
 
-                currentQuoteIdx = (currentQuoteIdx + 1) % appQuotes.length;
-                const quote = appQuotes[currentQuoteIdx];
-                const font = fonts[Math.floor(Math.random() * fonts.length)];
-                const anim = anims[Math.floor(Math.random() * anims.length)];
+            // Scheme Logic
+            function renderScheme() {
+                const img = document.getElementById('client-scheme-img');
+                const markers = document.getElementById('client-scheme-markers');
+                const empty = document.getElementById('client-scheme-empty');
+                
+                if (!appData.scheme?.image) {
+                    if (img) img.style.display = 'none';
+                    if (empty) empty.style.display = 'block';
+                    return;
+                }
+                if (img) { img.src = appData.scheme.image; img.style.display = 'block'; }
+                if (empty) empty.style.display = 'none';
+                if (markers) {
+                    markers.innerHTML = '';
+                    appData.scheme.tables.forEach(t => {
+                        const m = document.createElement('div');
+                        m.className = 'table-marker';
+                        m.style.left = t.x + '%'; m.style.top = t.y + '%';
+                        m.innerText = t.num;
+                        m.onclick = () => {
+                            document.getElementById('res-table-num').innerText = t.num;
+                            document.getElementById('reservation-form-modal').style.display = 'flex';
+                        };
+                        markers.appendChild(m);
+                    });
+                }
+            }
 
-                quoteBox.innerHTML = `<p class="quote-text active ${font} ${anim}">${quote}</p>`;
-            };
+            // Navigation
+            document.querySelectorAll('.filter-pill').forEach(p => {
+                p.onclick = () => {
+                    document.querySelectorAll('.filter-pill').forEach(pill => pill.classList.remove('active'));
+                    p.classList.add('active');
+                    currentCategory = p.getAttribute('data-cat');
+                    renderMenu(currentCategory);
+                };
+            });
 
-            updateQuote();
-            setInterval(updateQuote, 5000);
+            if (navHomeBtn) navHomeBtn.onclick = () => { renderMenu('all'); window.scrollTo({top:0, behavior:'smooth'}); };
+            if (navFavBtn) navFavBtn.onclick = () => { renderMenu('fav'); window.scrollTo({top:document.getElementById('cat-filter').offsetTop-80, behavior:'smooth'}); };
+            
+            if (openCartBtn) openCartBtn.onclick = () => cartModal.style.display = 'flex';
+            if (closeCartBtn) closeCartBtn.onclick = () => cartModal.style.display = 'none';
+            if (openSchemeBtn) openSchemeBtn.onclick = () => { schemeModal.style.display = 'flex'; renderScheme(); };
+            if (closeSchemeBtn) closeSchemeBtn.onclick = () => schemeModal.style.display = 'none';
+
+            // Initial Init
+            renderStories();
+            renderMenu();
+            updateCartUI();
+            rotateQuotes();
+            setInterval(rotateQuotes, 5000);
+            
+            lucide.createIcons();
+            
+            // Welcome screen handling
+            const name = localStorage.getItem('userName');
+            const welcome = document.getElementById('welcome-screen');
+            const greeting = document.getElementById('greeting-area');
+            if (!name) { if (welcome) welcome.style.display = 'flex'; }
+            else { if (greeting) greeting.style.display = 'flex'; }
+
+            const saveNameBtn = document.getElementById('save-name-btn');
+            if (saveNameBtn) {
+                saveNameBtn.onclick = () => {
+                    const n = document.getElementById('user-name-input').value.trim();
+                    if (n) { localStorage.setItem('userName', n); location.reload(); }
+                };
+            }
+
+            if (openSearch) openSearch.onclick = () => searchModal.style.display = 'flex';
+            if (closeSearch) closeSearch.onclick = () => searchModal.style.display = 'none';
+            if (searchInput) {
+                searchInput.oninput = (e) => {
+                    const q = e.target.value.toLowerCase();
+                    if (!resultsGrid) return;
+                    resultsGrid.innerHTML = '';
+                    appData.menu.filter(i => i.name.toLowerCase().includes(q) || (i.description && i.description.toLowerCase().includes(q)))
+                        .forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = 'menu-card';
+                            card.innerHTML = `<h3>${item.name}</h3><p>${item.price} с.</p><button class="add-btn" onclick="addToCart('${item.name}', ${item.price}, '${item.image_url}')">+</button>`;
+                            resultsGrid.appendChild(card);
+                        });
+                };
+            }
+
+            // Checkout Logic
+            const checkoutBtn = document.getElementById('checkout-btn');
+            if (checkoutBtn) {
+                checkoutBtn.onclick = async () => {
+                    if (cart.length === 0) return alert('Корзина пуста');
+                    const userName = localStorage.getItem('userName') || 'Гость';
+                    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+                    const itemsText = cart.map(i => `${i.name} x${i.qty}`).join(', ');
+
+                    // Save to Supabase
+                    const { error } = await supabase.from('orders').insert([{
+                        user: userName,
+                        items: itemsText,
+                        total: total
+                    }]);
+
+                    if (error) console.error("Order error:", error);
+
+                    // Send to WhatsApp
+                    let msg = `*Новый заказ от ${userName}*%0A%0A`;
+                    cart.forEach(i => msg += `• ${i.name} x${i.qty} — ${i.price * i.qty} с.%0A`);
+                    msg += `%0A*Итого: ${total} с.*`;
+
+                    const adminPhone = appData.settings.find(s => s.key === 'admin_phone')?.value || "996555123456";
+                    window.open(`https://wa.me/${adminPhone}?text=${msg}`, '_blank');
+
+                    cart = [];
+                    updateCartUI();
+                    cartModal.style.display = 'none';
+                };
+            }
+
+            // Reservation Logic
+            const submitResBtn = document.getElementById('submit-res-btn');
+            if (submitResBtn) {
+                submitResBtn.onclick = async () => {
+                    const table = document.getElementById('res-table-num').innerText;
+                    const name = document.getElementById('res-name').value;
+                    const date = document.getElementById('res-date').value;
+                    const time = document.getElementById('res-time').value;
+                    const guests = document.getElementById('res-guests').value;
+                    
+                    if (!name || !date || !time || !guests) return alert('Заполните все поля');
+                    
+                    const msg = `*Бронирование стола*%0A%0A*Стол №${table}*%0A*Имя:* ${name}%0A*Дата:* ${date}%0A*Время:* ${time}%0A*Гостей:* ${guests}`;
+                    const adminPhone = appData.settings.find(s => s.key === 'admin_phone')?.value || "996555123456";
+                    window.open(`https://wa.me/${adminPhone}?text=${msg}`, '_blank');
+                    
+                    document.getElementById('reservation-form-modal').style.display = 'none';
+                    schemeModal.style.display = 'none';
+                };
+            }
+
+            // Call Waiter Logic
+            const callWaiterBtn = document.getElementById('call-waiter-btn');
+            if (callWaiterBtn) {
+                callWaiterBtn.onclick = async () => {
+                    const userName = localStorage.getItem('userName') || 'Гость';
+                    const tableNum = new URLSearchParams(window.location.search).get('table');
+                    const tableText = tableNum ? ` (Стол №${tableNum})` : '';
+                    
+                    const msg = `*🔔 ВЫЗОВ ОФИЦИАНТА!*%0A%0A👤 Клиент: ${userName}${tableText}%0A📍 Просит подойти к столу.`;
+                    const adminPhone = appData.settings.find(s => s.key === 'admin_phone')?.value || "996555123456";
+                    
+                    window.open(`https://wa.me/${adminPhone}?text=${msg}`, '_blank');
+                };
+            }
         });
     </script>
 </body>

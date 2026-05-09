@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Pizza Center</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -18,138 +19,118 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         .admin-container { max-width: 1000px; margin: 0 auto; }
         
-        /* Login */
-        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-        .login-card { background: var(--card); padding: 40px; border-radius: 24px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; margin-bottom: 20px; outline: none; }
-        button { width: 100%; padding: 15px; border-radius: 12px; background: var(--accent); color: white; border: none; font-weight: 700; cursor: pointer; }
-
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
-        .tab { padding: 10px 20px; border-radius: 10px; background: var(--card); cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: 800; color: var(--accent); }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
+        .tab { padding: 10px 20px; background: var(--card); border-radius: 10px; cursor: pointer; transition: 0.3s; white-space: nowrap; }
         .tab.active { background: var(--accent); }
-
+        
         .section { display: none; }
         .section.active { display: block; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .item-card { background: var(--card); padding: 25px; border-radius: 24px; position: relative; border: 1px solid rgba(255,255,255,0.05); }
-        .item-card img { width: 80px; height: 80px; border-radius: 16px; object-fit: cover; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .item-actions { margin-top: 20px; display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
-        .btn-action { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: 0.2s; }
-        .btn-edit { background: rgba(255,255,255,0.1); color: white; }
-        .btn-edit:hover { background: rgba(255,255,255,0.2); }
-        .btn-del { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .btn-del:hover { background: rgba(239, 68, 68, 0.2); }
-
-        .order-row { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--accent); }
-        .order-meta { font-size: 12px; color: var(--text-dim); margin-top: 5px; }
-
-        /* Modal */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1500; padding: 20px; }
-        .modal-content { background: var(--card); padding: 30px; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-        select { width: 100%; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.2); color: white; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         
-        .table-marker { position: absolute; width: 30px; height: 30px; background: var(--accent); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; transform: translate(-50%, -50%); cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.5); z-index: 10;}
-        .table-marker:hover { background: #ea580c; z-index: 11; transform: translate(-50%, -50%) scale(1.1); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .item-card { background: var(--card); border-radius: 15px; overflow: hidden; position: relative; }
+        .item-card img { width: 100%; height: 150px; object-fit: cover; }
+        .item-info { padding: 15px; }
+        .item-info h3 { font-size: 16px; margin-bottom: 5px; }
+        .item-info p { color: var(--accent); font-weight: 700; }
+        
+        .btn-add { background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+        
+        .btn-action { width: auto; padding: 5px 10px; font-size: 12px; background: rgba(255,255,255,0.1); }
+        .btn-del { color: #ef4444; }
+        
+        .table-marker { position: absolute; width: 25px; height: 25px; background: var(--accent); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; cursor: move; }
+
+        .loader { width: 20px; height: 20px; border: 2px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="login-overlay" class="login-overlay">
-        <div class="login-card">
-            <h1 style="margin-bottom: 20px;">Админ-панель</h1>
-            <input type="password" id="admin-pass" placeholder="Введите пароль">
-            <button onclick="login()">Войти</button>
+    <div id="login-overlay">
+        <div style="background: var(--card); padding: 40px; border-radius: 20px; text-align: center; width: 300px;">
+            <h2 style="margin-bottom: 20px;">Admin Login</h2>
+            <input type="password" id="admin-pass" placeholder="Password">
+            <button onclick="login()" style="background: var(--accent); color: white;">Login</button>
         </div>
     </div>
 
     <div class="admin-container">
         <header>
-            <h1>Админ-центр</h1>
-            <div style="display:flex; gap:10px;">
-                <button style="width: auto; padding: 10px 20px; background: #475569;" onclick="openModal('story')">+ Добавить Сториз</button>
-                <button style="width: auto; padding: 10px 20px;" onclick="openModal('item')">+ Добавить блюдо</button>
-            </div>
+            <div class="logo">PIZZA ADMIN</div>
+            <button onclick="exportData()" style="width: auto; background: var(--card); font-size: 12px;">Backup JSON</button>
         </header>
 
         <div class="tabs">
             <div class="tab active" onclick="switchTab('menu', this)">Меню</div>
-            <div class="tab" onclick="switchTab('stories', this)">Сториз</div>
-            <div class="tab" onclick="switchTab('orders', this)">Заказы</div>
+            <div class="tab" onclick="switchTab('stories', this)">Сторис</div>
             <div class="tab" onclick="switchTab('scheme', this)">Схема зала</div>
             <div class="tab" onclick="switchTab('quotes', this)">Цитаты</div>
+            <div class="tab" onclick="switchTab('orders', this)">Заказы</div>
             <div class="tab" onclick="switchTab('settings', this)">Настройки</div>
         </div>
 
+        <!-- Menu Section -->
         <div id="menu-section" class="section active">
-            <div class="grid" id="menu-grid">
-                <!-- Items here -->
-            </div>
+            <button class="btn-add" onclick="openModal('item')"><i data-lucide="plus"></i> Добавить блюдо</button>
+            <div class="grid" id="menu-grid"></div>
         </div>
 
+        <!-- Stories Section -->
         <div id="stories-section" class="section">
-            <div class="grid" id="stories-grid">
-                <!-- Stories here -->
-            </div>
+            <button class="btn-add" onclick="openModal('story')"><i data-lucide="plus"></i> Добавить историю</button>
+            <div class="grid" id="stories-grid"></div>
         </div>
 
-        <div id="orders-section" class="section">
-            <div id="orders-list">
-                <!-- Orders here -->
-            </div>
-        </div>
-
-        <div id="scheme-section" class="section">
-            <div class="item-card">
-                <h3>Настройка схемы зала</h3>
-                <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 15px;">Загрузите изображение плана зала, затем кликните по картинке, чтобы добавить столы.</p>
-                
-                <label style="display:block; margin: 10px 0 5px; font-size: 14px;">Ссылка на схему (или загрузите файл)</label>
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="text" id="scheme-img-url" placeholder="URL картинки" style="margin-bottom:0; flex:1;" onchange="loadScheme()">
-                    <input type="file" id="scheme-file" accept="image/*" style="display:none;" onchange="handleSchemeUpload(this)">
-                    <button onclick="document.getElementById('scheme-file').click()" style="width:auto; padding:0 20px; background:#475569;">Файл</button>
-                </div>
-                
-                <div id="scheme-container" style="position: relative; width: 100%; max-width: 600px; margin: 0 auto; background: rgba(0,0,0,0.2); border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; overflow: hidden; cursor: crosshair;">
-                    <img id="scheme-preview" src="" style="width: 100%; display: block; opacity: 0.5;" onclick="addTableMarker(event)">
-                    <div id="scheme-markers"></div>
-                </div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <span id="scheme-status" style="font-size: 14px; color: var(--accent);">Схема не загружена</span>
-                </div>
-                
-                <button onclick="saveScheme()" style="margin-top: 20px;">Сохранить схему</button>
-            </div>
-            
-            <div class="item-card" style="margin-top: 20px;">
-                <h3>Список столов</h3>
-                <div id="scheme-tables-list" style="margin-top: 15px;">
-                    <!-- Table rows will go here -->
-                </div>
-            </div>
-        </div>
-
-        <div id="settings-section" class="section">
-            <div class="item-card">
-                <h3>Основные настройки</h3>
-                <label style="display:block; margin: 20px 0 10px; font-size: 14px; color: var(--text-dim);">WhatsApp номер для заказов (без +)</label>
-                <input type="text" id="setting-phone" placeholder="996555123456">
-                <button onclick="saveSettings()">Сохранить настройки</button>
-            </div>
-        </div>
-
+        <!-- Quotes Section -->
         <div id="quotes-section" class="section">
-            <div class="item-card">
-                <h3>Управление цитатами</h3>
-                <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 15px;">Эти фразы будут отображаться на главной странице с красивой анимацией.</p>
-                <div style="display:flex; gap:10px; margin-bottom:20px;">
-                    <input type="text" id="new-quote-text" placeholder="Введите вдохновляющую фразу..." style="margin-bottom:0; flex:1;">
-                    <button onclick="addQuote()" style="width:auto; padding:0 20px;">Добавить</button>
-                </div>
-                <div id="quotes-list" class="grid">
-                    <!-- Quotes will be here -->
-                </div>
+            <div style="background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px;">
+                <h3>Добавить цитату</h3>
+                <textarea id="new-quote-text" placeholder="Введите текст цитаты..." rows="3" style="margin-top: 15px;"></textarea>
+                <button onclick="addQuote()" style="background: var(--accent); color: white;">Добавить</button>
+            </div>
+            <div id="quotes-list" class="grid"></div>
+        </div>
+
+        <!-- Orders Section -->
+        <div id="orders-section" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>История заказов</h2>
+                <button onclick="clearOrders()" style="width:auto; background:#ef4444; color:white;">Очистить все</button>
+            </div>
+            <div id="orders-list" class="grid"></div>
+        </div>
+
+        <!-- Scheme Section -->
+        <div id="scheme-section" class="section">
+            <div style="background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px;">
+                <h3>Загрузить фото зала</h3>
+                <input type="file" onchange="handleFileUpload(this, 'scheme')" style="margin-top: 10px;">
+                <p style="font-size: 12px; color: var(--text-dim); margin-top: 10px;">* Нажмите на фото, чтобы добавить стол</p>
+            </div>
+            <div id="scheme-editor" style="position: relative; width: 100%; background: #000; border-radius: 20px; overflow: hidden;">
+                <img id="scheme-img-preview" src="" style="width: 100%; display: block; min-height: 300px;">
+                <div id="scheme-markers-container"></div>
+            </div>
+            <button onclick="saveScheme()" style="background: var(--accent); color: white; margin-top: 20px;">Сохранить схему</button>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="section">
+            <div style="background: var(--card); padding: 20px; border-radius: 20px;">
+                <h3>Настройки WhatsApp</h3>
+                <label style="display:block; margin: 15px 0 5px; font-size: 14px;">Номер телефона для заказов (с кодом страны, без +)</label>
+                <input type="text" id="admin-phone" placeholder="996555123456">
+                <button onclick="saveSettings()" style="background: var(--accent); color: white;">Сохранить</button>
             </div>
         </div>
     </div>
@@ -161,15 +142,12 @@
             <div id="modal-img-preview" style="width: 100%; height: 200px; border-radius: 15px; background: rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px dashed rgba(255,255,255,0.1);">
                 <span style="color:var(--text-dim); font-size:14px;">Предпросмотр фото</span>
             </div>
-            <input type="text" id="item-name" placeholder="Название блюда">
+            <input type="text" id="item-name" placeholder="Название">
             <input type="text" id="item-desc" placeholder="Описание">
-            <input type="text" id="item-price" placeholder="Цена (например: 850 / 1200)">
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <input type="text" id="item-img" placeholder="URL картинки" style="margin-bottom:0; flex:1;" oninput="updatePreview(this.value)">
-                <button onclick="generateImage()" style="width:auto; padding:0 15px; background:#475569;"><i data-lucide="sparkles"></i></button>
-            </div>
+            <input type="text" id="item-price" placeholder="Цена">
+            <input type="text" id="item-img" placeholder="URL картинки" oninput="updatePreview(this.value)">
             <div style="margin-bottom:20px;">
-                <label style="display:block; margin-bottom:10px; font-size:14px; color:var(--text-dim);">Или загрузить свое фото:</label>
+                <label style="display:block; margin-bottom:10px; font-size:14px; color:var(--text-dim);">Или загрузить фото:</label>
                 <input type="file" id="item-file" accept="image/*" onchange="handleFileUpload(this)">
             </div>
             <select id="item-cat">
@@ -180,49 +158,54 @@
                 <option value="snacks">Закуски</option>
             </select>
             <div style="display:flex; gap:10px;">
-                <button style="background: #334155;" onclick="closeModal()">Отмена</button>
-                <button id="save-item-btn" onclick="saveItem()">Сохранить</button>
+                <button style="background: #334155; color: white;" onclick="closeModal()">Отмена</button>
+                <button id="save-item-btn" onclick="saveItem()" style="background: var(--accent); color: white;">Сохранить</button>
             </div>
         </div>
     </div>
 
     <script>
-        const DEFAULT_MENU = [
-            { id: 1, name: 'Королевский Бургер', desc: 'Сочная говядина, чеддер, фирменный соус', price: 2450, cat: 'second', img: 'assets/burger.png', i18n: 'item1' },
-            { id: 2, name: 'Маргарита Премиум', desc: 'Свежие томаты, моцарелла, базилик', price: 3100, cat: 'second', img: 'assets/pizza.png', i18n: 'item2' },
-            { id: 3, name: 'Сет "Токио"', desc: 'Лосось, тунец, авокадо, 16 шт.', price: 5800, cat: 'snacks', img: 'assets/sushi.png', i18n: 'item3' },
-            { id: 4, name: 'Шоколадный Фондан', desc: 'Теплый шоколад с малиновым соусом', price: 1850, cat: 'desserts', img: 'assets/dessert.png', i18n: 'item4' },
-            { id: 5, name: 'Борщ "Украинский"', desc: 'Свекла, говядина, свежая сметана', price: 850, cat: 'first', img: 'assets/burger.png', i18n: 'item5' },
-            { id: 6, name: 'Шорпо из баранины', desc: 'Наваристый бульон, отборная баранина и овощи', price: 950, cat: 'first', img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=300&q=80', i18n: 'item6' },
-            { id: 7, name: 'Пицца центр', desc: '1090 гр, 40 см', price: 850, cat: 'second', img: 'assets/pizza.png', i18n: 'item7' }
-        ];
+        const SUPABASE_URL = 'https://ihzeeilfmbgsddzcyywp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloemVlaWxmbWJnc2RkemN5eXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTU4NzMsImV4cCI6MjA5Mzg5MTg3M30.nv3DvgcgxHvk1J_W0U5o94LWY5w8nAcZTyAg92mz77M';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const DEFAULT_STORIES = [
-            { id: 1, title: 'Новинки', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80', i18n: 'new' },
-            { id: 2, title: 'Акции', img: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=200&q=80', i18n: 'promo' },
-            { id: 3, title: 'Бонусы', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80', i18n: 'bonus' },
-            { id: 4, title: 'Адрес', img: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=200&q=80', i18n: 'address' },
-            { id: 5, title: 'О нас', img: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=200&q=80', i18n: 'about' }
-        ];
-
-        let menu = JSON.parse(localStorage.getItem('customMenu')) || DEFAULT_MENU;
-        let stories = JSON.parse(localStorage.getItem('customStories')) || DEFAULT_STORIES;
-        let orders = JSON.parse(localStorage.getItem('allOrders')) || [];
+        let menu = [];
+        let stories = [];
+        let quotes = [];
+        let orders = [];
         let editingId = null;
-        let modalType = 'item'; // 'item' or 'story'
+        let modalType = 'item';
 
-        function login() {
+        async function login() {
             const pass = document.getElementById('admin-pass').value;
             if (pass === 'admin') {
                 document.getElementById('login-overlay').style.display = 'none';
-                renderMenu();
-                renderStories();
-                renderOrders();
-                renderQuotes();
-                loadSettings();
-                initScheme();
+                await refreshAll();
             } else {
                 alert('Неверный пароль');
+            }
+        }
+
+        async function refreshAll() {
+            try {
+                const { data: menuData } = await supabase.from('menu').select('*').order('id', { ascending: true });
+                const { data: storyData } = await supabase.from('stories').select('*').order('id', { ascending: true });
+                const { data: quoteData } = await supabase.from('quotes').select('*').order('id', { ascending: true });
+                const { data: orderData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+
+                menu = menuData || [];
+                stories = storyData || [];
+                quotes = quoteData || [];
+                orders = orderData || [];
+
+                renderMenu();
+                renderStories();
+                renderQuotes();
+                renderOrders();
+                initScheme();
+                loadSettings();
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -240,17 +223,14 @@
                 const card = document.createElement('div');
                 card.className = 'item-card';
                 card.innerHTML = `
-                    <div style="display:flex; gap:15px; align-items:center;">
-                        <img src="${item.img}">
-                        <div>
-                            <h3 style="font-size:18px;">${item.name}</h3>
-                            <div style="font-weight: 700; color: var(--accent); margin-top:4px;">${item.price} с.</div>
+                    <img src="${item.image_url}">
+                    <div class="item-info">
+                        <h3>${item.name}</h3>
+                        <p>${item.price} с.</p>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button class="btn-action" onclick="openModal('item', ${item.id})"><i data-lucide="edit-3"></i></button>
+                            <button class="btn-action btn-del" onclick="deleteItem('menu', ${item.id})"><i data-lucide="trash-2"></i></button>
                         </div>
-                    </div>
-                    <p style="font-size: 13px; color: var(--text-dim); margin-top:15px; line-height:1.5;">${item.desc}</p>
-                    <div class="item-actions">
-                        <button class="btn-action btn-edit" onclick="editItem(${item.id})"><i data-lucide="edit-3"></i> Изменить</button>
-                        <button class="btn-action btn-del" onclick="deleteItem(${item.id})"><i data-lucide="trash-2"></i> Удалить</button>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -261,20 +241,17 @@
         function renderStories() {
             const grid = document.getElementById('stories-grid');
             grid.innerHTML = '';
-            stories.forEach(story => {
+            stories.forEach(s => {
                 const card = document.createElement('div');
                 card.className = 'item-card';
                 card.innerHTML = `
-                    <div style="display:flex; gap:15px; align-items:center;">
-                        <img src="${story.img}" style="border-radius: 50%;">
-                        <div>
-                            <h3 style="font-size:18px;">${story.title}</h3>
-                            <div style="font-size: 12px; color: var(--text-dim);">ID: ${story.id}</div>
+                    <img src="${s.image_url}">
+                    <div class="item-info">
+                        <h3>${s.title}</h3>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button class="btn-action" onclick="openModal('story', ${s.id})"><i data-lucide="edit-3"></i></button>
+                            <button class="btn-action btn-del" onclick="deleteItem('stories', ${s.id})"><i data-lucide="trash-2"></i></button>
                         </div>
-                    </div>
-                    <div class="item-actions">
-                        <button class="btn-action btn-edit" onclick="editStory(${story.id})"><i data-lucide="edit-3"></i> Изменить</button>
-                        <button class="btn-action btn-del" onclick="deleteStory(${story.id})"><i data-lucide="trash-2"></i> Удалить</button>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -282,339 +259,215 @@
             lucide.createIcons();
         }
 
-        function renderOrders() {
-            const list = document.getElementById('orders-list');
-            list.innerHTML = '';
-            if (orders.length === 0) {
-                list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">Заказов пока нет</p>';
-                return;
-            }
-            orders.slice().reverse().forEach(order => {
-                const row = document.createElement('div');
-                row.className = 'order-row';
-                row.innerHTML = `
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong>${order.user}</strong>
-                        <span>${order.total} с.</span>
-                    </div>
-                    <div style="font-size: 13px; margin-top: 5px;">${order.items}</div>
-                    <div class="order-meta">${order.date}</div>
-                `;
-                list.appendChild(row);
-            });
-        }
-
-        function loadSettings() {
-            document.getElementById('setting-phone').value = localStorage.getItem('adminPhone') || '996555123456';
-        }
-
-        function saveSettings() {
-            const phone = document.getElementById('setting-phone').value;
-            localStorage.setItem('adminPhone', phone);
-            alert('Настройки сохранены!');
-        }
-
-        // --- SCHEME LOGIC ---
-        let tableScheme = JSON.parse(localStorage.getItem('tableScheme')) || { image: '', tables: [] };
-
-        function initScheme() {
-            if (tableScheme.image) {
-                document.getElementById('scheme-img-url').value = tableScheme.image;
-                const img = document.getElementById('scheme-preview');
-                img.src = tableScheme.image;
-                img.style.opacity = '1';
-                document.getElementById('scheme-status').innerText = 'Схема загружена. Кликните для добавления стола.';
-                document.getElementById('scheme-status').style.color = '#10b981';
-            }
-            renderSchemeMarkers();
-            renderSchemeList();
-        }
-
-        function loadScheme() {
-            tableScheme.image = document.getElementById('scheme-img-url').value;
-            initScheme();
-        }
-
-        function handleSchemeUpload(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    tableScheme.image = e.target.result;
-                    initScheme();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function addTableMarker(event) {
-            if (!tableScheme.image) {
-                alert('Сначала загрузите изображение схемы');
-                return;
-            }
-            
-            const rect = event.target.getBoundingClientRect();
-            const x = ((event.clientX - rect.left) / rect.width) * 100;
-            const y = ((event.clientY - rect.top) / rect.height) * 100;
-            
-            const num = prompt("Введите номер или название стола:");
-            if (num) {
-                tableScheme.tables.push({
-                    id: Date.now(),
-                    num: num,
-                    x: x,
-                    y: y
-                });
-                renderSchemeMarkers();
-                renderSchemeList();
-            }
-        }
-
-        function renderSchemeMarkers() {
-            const container = document.getElementById('scheme-markers');
-            container.innerHTML = '';
-            tableScheme.tables.forEach(t => {
-                const marker = document.createElement('div');
-                marker.className = 'table-marker';
-                marker.style.left = t.x + '%';
-                marker.style.top = t.y + '%';
-                marker.innerText = t.num;
-                marker.title = "Удалить стол " + t.num;
-                marker.onclick = (e) => {
-                    e.stopPropagation();
-                    if(confirm('Удалить стол №' + t.num + '?')) {
-                        deleteSchemeTable(t.id);
-                    }
-                };
-                container.appendChild(marker);
-            });
-        }
-
-        function renderSchemeList() {
-            const list = document.getElementById('scheme-tables-list');
-            list.innerHTML = '';
-            if (tableScheme.tables.length === 0) {
-                list.innerHTML = '<p style="color:var(--text-dim); font-size: 14px;">Столов пока нет</p>';
-                return;
-            }
-            tableScheme.tables.forEach(t => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px 15px; border-radius:10px; margin-bottom:8px;';
-                row.innerHTML = `
-                    <span>Стол №${t.num}</span>
-                    <button style="width:auto; padding:5px 10px; font-size:12px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:none; border-radius:6px; cursor:pointer;" onclick="deleteSchemeTable(${t.id})">Удалить</button>
-                `;
-                list.appendChild(row);
-            });
-        }
-
-        function deleteSchemeTable(id) {
-            tableScheme.tables = tableScheme.tables.filter(t => t.id !== id);
-            renderSchemeMarkers();
-            renderSchemeList();
-        }
-
-        function saveScheme() {
-            localStorage.setItem('tableScheme', JSON.stringify(tableScheme));
-            alert('Схема и столы успешно сохранены!');
-        }
-
-        function openModal(type = 'item') {
+        function openModal(type, id = null) {
             modalType = type;
-            editingId = null;
-            document.getElementById('modal-title').innerText = type === 'item' ? 'Новое блюдо' : 'Новый Сториз';
+            editingId = id;
+            const modal = document.getElementById('item-modal');
+            const title = document.getElementById('modal-title');
+            modal.style.display = 'flex';
+
+            if (type === 'item') {
+                title.innerText = id ? 'Редактировать блюдо' : 'Новое блюдо';
+                document.getElementById('item-cat').style.display = 'block';
+                document.getElementById('item-price').style.display = 'block';
+                document.getElementById('item-desc').style.display = 'block';
+                if (id) {
+                    const item = menu.find(m => m.id === id);
+                    document.getElementById('item-name').value = item.name;
+                    document.getElementById('item-desc').value = item.description;
+                    document.getElementById('item-price').value = item.price;
+                    document.getElementById('item-img').value = item.image_url;
+                    document.getElementById('item-cat').value = item.category;
+                    updatePreview(item.image_url);
+                } else {
+                    resetModal();
+                }
+            } else {
+                title.innerText = id ? 'Редактировать историю' : 'Новая история';
+                document.getElementById('item-cat').style.display = 'none';
+                document.getElementById('item-price').style.display = 'none';
+                document.getElementById('item-desc').style.display = 'none';
+                if (id) {
+                    const s = stories.find(st => st.id === id);
+                    document.getElementById('item-name').value = s.title;
+                    document.getElementById('item-img').value = s.image_url;
+                    updatePreview(s.image_url);
+                } else {
+                    resetModal();
+                }
+            }
+        }
+
+        function resetModal() {
             document.getElementById('item-name').value = '';
             document.getElementById('item-desc').value = '';
             document.getElementById('item-price').value = '';
             document.getElementById('item-img').value = '';
-            
-            // Hide menu-specific fields if it's a story
-            document.getElementById('item-price').style.display = type === 'item' ? 'block' : 'none';
-            document.getElementById('item-desc').style.display = type === 'item' ? 'block' : 'none';
-            document.getElementById('item-cat').style.display = type === 'item' ? 'block' : 'none';
-            
-            document.getElementById('modal-img-preview').innerHTML = '<span style="color:var(--text-dim); font-size:14px;">Предпросмотр фото</span>';
-            document.getElementById('item-modal').style.display = 'flex';
+            document.getElementById('modal-img-preview').innerHTML = '<span>Предпросмотр фото</span>';
         }
 
         function closeModal() {
             document.getElementById('item-modal').style.display = 'none';
         }
 
-        function editItem(id) {
-            modalType = 'item';
-            const item = menu.find(i => i.id === id);
-            editingId = id;
-            document.getElementById('modal-title').innerText = 'Редактировать блюдо';
-            document.getElementById('item-name').value = item.name;
-            document.getElementById('item-desc').value = item.desc;
-            document.getElementById('item-price').value = item.price;
-            document.getElementById('item-img').value = item.img;
-            
-            document.getElementById('item-price').style.display = 'block';
-            document.getElementById('item-desc').style.display = 'block';
-            document.getElementById('item-cat').style.display = 'block';
-
-            updatePreview(item.img);
-            document.getElementById('item-cat').value = item.cat;
-            document.getElementById('item-modal').style.display = 'flex';
+        function updatePreview(url) {
+            const prev = document.getElementById('modal-img-preview');
+            if (url) prev.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;">`;
+            else prev.innerHTML = '<span>Предпросмотр фото</span>';
         }
 
-        function editStory(id) {
-            modalType = 'story';
-            const story = stories.find(s => s.id === id);
-            editingId = story.id;
-            document.getElementById('modal-title').innerText = 'Редактировать Сториз';
-            document.getElementById('item-name').value = story.title;
-            document.getElementById('item-img').value = story.img;
-            
-            document.getElementById('item-price').style.display = 'none';
-            document.getElementById('item-desc').style.display = 'none';
-            document.getElementById('item-cat').style.display = 'none';
-
-            updatePreview(story.img);
-            document.getElementById('item-modal').style.display = 'flex';
-        }
-
-        function deleteStory(id) {
-            if (confirm('Удалить этот сториз?')) {
-                stories = stories.filter(s => s.id !== id);
-                localStorage.setItem('customStories', JSON.stringify(stories));
-                renderStories();
-            }
-        }
-
-        function deleteItem(id) {
-            if (confirm('Удалить это блюдо?')) {
-                menu = menu.filter(i => i.id !== id);
-                localStorage.setItem('customMenu', JSON.stringify(menu));
-                renderMenu();
-            }
-        }
-
-        function saveItem() {
+        async function saveItem() {
             const name = document.getElementById('item-name').value;
+            const img = document.getElementById('item-img').value;
+            
             if (modalType === 'item') {
-                const newItem = {
-                    id: editingId || Date.now(),
-                    name: name,
-                    desc: document.getElementById('item-desc').value,
-                    price: document.getElementById('item-price').value,
-                    img: document.getElementById('item-img').value || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=300&q=80',
-                    cat: document.getElementById('item-cat').value
-                };
-
-                if (editingId) {
-                    const index = menu.findIndex(i => i.id === editingId);
-                    menu[index] = newItem;
-                } else {
-                    menu.push(newItem);
-                }
-
-                localStorage.setItem('customMenu', JSON.stringify(menu));
-                renderMenu();
+                const desc = document.getElementById('item-desc').value;
+                const price = document.getElementById('item-price').value;
+                const cat = document.getElementById('item-cat').value;
+                const item = { name, description: desc, price, image_url: img, category: cat };
+                
+                if (editingId) await supabase.from('menu').update(item).eq('id', editingId);
+                else await supabase.from('menu').insert([item]);
             } else {
-                const newStory = {
-                    id: editingId || Date.now(),
-                    title: name,
-                    img: document.getElementById('item-img').value || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80',
-                };
-
-                if (editingId) {
-                    const index = stories.findIndex(s => s.id === editingId);
-                    stories[index] = newStory;
-                } else {
-                    stories.push(newStory);
-                }
-
-                localStorage.setItem('customStories', JSON.stringify(stories));
-                renderStories();
+                const story = { title: name, image_url: img };
+                if (editingId) await supabase.from('stories').update(story).eq('id', editingId);
+                else await supabase.from('stories').insert([story]);
             }
             closeModal();
+            refreshAll();
         }
 
-        function generateImage() {
-            const name = document.getElementById('item-name').value;
-            if (!name) {
-                alert('Сначала введите название блюда');
-                return;
-            }
-            // Use a more reliable food image service with keywords
-            const query = encodeURIComponent(name);
-            const randomId = Math.floor(Math.random() * 1000);
-            const finalUrl = `https://loremflickr.com/500/500/food,dish,${query}?lock=${randomId}`;
-            
-            document.getElementById('item-img').value = finalUrl;
-            updatePreview(finalUrl);
-        }
-
-        function updatePreview(url) {
-            const preview = document.getElementById('modal-img-preview');
-            if (url) {
-                preview.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;">`;
-            } else {
-                preview.innerHTML = `<span style="color:var(--text-dim); font-size:14px;">Предпросмотр фото</span>`;
+        async function deleteItem(table, id) {
+            if (confirm('Удалить?')) {
+                await supabase.from(table).delete().eq('id', id);
+                refreshAll();
             }
         }
 
-        function handleFileUpload(input) {
+        // Scheme Logic
+        let schemeData = { image: '', tables: [] };
+        async function initScheme() {
+            const { data } = await supabase.from('scheme').select('*').eq('id', 1).single();
+            if (data) {
+                schemeData = data;
+                document.getElementById('scheme-img-preview').src = data.image || '';
+                renderSchemeMarkers();
+            }
+        }
+
+        async function saveScheme() {
+            await supabase.from('scheme').upsert({ id: 1, ...schemeData });
+            alert('Схема сохранена!');
+        }
+
+        function renderSchemeMarkers() {
+            const container = document.getElementById('scheme-markers-container');
+            container.innerHTML = '';
+            schemeData.tables.forEach((t, i) => {
+                const m = document.createElement('div');
+                m.className = 'table-marker';
+                m.style.left = t.x + '%'; m.style.top = t.y + '%';
+                m.innerText = t.num;
+                m.onclick = (e) => { e.stopPropagation(); if (confirm('Удалить стол?')) { schemeData.tables.splice(i, 1); renderSchemeMarkers(); } };
+                container.appendChild(m);
+            });
+        }
+
+        document.getElementById('scheme-img-preview').onclick = (e) => {
+            if (!schemeData.image) return alert('Сначала загрузите фото зала');
+            const rect = e.target.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            const num = prompt('Номер стола:');
+            if (num) {
+                schemeData.tables.push({ num, x: x.toFixed(2), y: y.toFixed(2) });
+                renderSchemeMarkers();
+            }
+        };
+
+        async function handleFileUpload(input, type = 'item') {
             const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const url = e.target.result;
-                    document.getElementById('item-img').value = url;
-                    updatePreview(url);
-                };
-                reader.readAsDataURL(file);
+            if (!file) return;
+            const path = `uploads/${Date.now()}_${file.name}`;
+            const { data, error } = await supabase.storage.from('images').upload(path, file);
+            if (error) return alert(error.message);
+            const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(path);
+            if (type === 'scheme') {
+                schemeData.image = publicUrl;
+                document.getElementById('scheme-img-preview').src = publicUrl;
+            } else {
+                document.getElementById('item-img').value = publicUrl;
+                updatePreview(publicUrl);
             }
         }
-        // --- QUOTES LOGIC ---
-        let quotes = JSON.parse(localStorage.getItem('appQuotes')) || [
-            "Лучшая пицца в городе — специально для вас!",
-            "Время для вкусных открытий!",
-            "С любовью из печи в ваши руки.",
-            "Вкус, который вдохновляет."
-        ];
 
+        // Quotes
         function renderQuotes() {
             const list = document.getElementById('quotes-list');
             list.innerHTML = '';
-            quotes.forEach((q, index) => {
+            quotes.forEach(q => {
                 const card = document.createElement('div');
                 card.className = 'item-card';
                 card.style.padding = '15px';
-                card.innerHTML = `
-                    <p style="font-style: italic; margin-bottom: 15px;">"${q}"</p>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-action btn-del" onclick="deleteQuote(${index})"><i data-lucide="trash-2"></i> Удалить</button>
-                    </div>
-                `;
+                card.innerHTML = `<p style="font-style:italic; margin-bottom:10px;">"${q.text}"</p><button class="btn-action btn-del" onclick="deleteQuote(${q.id})">Удалить</button>`;
                 list.appendChild(card);
             });
-            lucide.createIcons();
         }
 
-        function addQuote() {
-            const input = document.getElementById('new-quote-text');
-            const text = input.value.trim();
+        async function addQuote() {
+            const text = document.getElementById('new-quote-text').value.trim();
             if (text) {
-                quotes.push(text);
-                input.value = '';
-                saveQuotes();
+                await supabase.from('quotes').insert([{ text }]);
+                document.getElementById('new-quote-text').value = '';
+                refreshAll();
             }
         }
 
-        function deleteQuote(index) {
-            if (confirm('Удалить эту цитату?')) {
-                quotes.splice(index, 1);
-                saveQuotes();
+        async function deleteQuote(id) {
+            if (confirm('Удалить цитату?')) {
+                await supabase.from('quotes').delete().eq('id', id);
+                refreshAll();
             }
         }
 
-        function saveQuotes() {
-            localStorage.setItem('appQuotes', JSON.stringify(quotes));
-            renderQuotes();
+        function renderOrders() {
+            const list = document.getElementById('orders-list');
+            list.innerHTML = '';
+            orders.forEach(o => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.style.padding = '15px';
+                card.innerHTML = `<h4>${o.user}</h4><p style="font-size:12px; margin:5px 0;">${o.items}</p><p><b>${o.total} с.</b></p><small style="color:var(--text-dim);">${new Date(o.created_at).toLocaleString()}</small>`;
+                list.appendChild(card);
+            });
+        }
+
+        async function clearOrders() {
+            if (confirm('Очистить историю?')) {
+                await supabase.from('orders').delete().neq('id', 0);
+                refreshAll();
+            }
+        }
+
+        async function saveSettings() {
+            const phone = document.getElementById('admin-phone').value;
+            await supabase.from('settings').upsert({ key: 'admin_phone', value: phone }, { onConflict: 'key' });
+            alert('Настройки сохранены!');
+        }
+
+        async function loadSettings() {
+            const { data } = await supabase.from('settings').select('*').eq('key', 'admin_phone').single();
+            if (data) document.getElementById('admin-phone').value = data.value;
+        }
+
+        function exportData() {
+            const data = { menu, stories, quotes, scheme: schemeData };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `center_pizza_supabase_backup_${new Date().toLocaleDateString()}.json`;
+            a.click();
         }
     </script>
 </body>
