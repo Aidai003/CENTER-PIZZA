@@ -32,7 +32,7 @@ while ($true) {
                 $ext = [System.IO.Path]::GetExtension($localPath).ToLower()
                 $type = switch ($ext) { ".html"{"text/html"}; ".css"{"text/css"}; ".js"{"application/javascript"}; ".png"{"image/png"}; default{"application/octet-stream"} }
                 
-                $header = "HTTP/1.1 200 OK`r`nContent-Type: $type; charset=utf-8`r`nContent-Length: $($content.Length)`r`nConnection: close`r`n`r`n"
+                $header = "HTTP/1.1 200 OK`r`nContent-Type: $type; charset=utf-8`r`nContent-Length: $($content.Length)`r`nCache-Control: no-cache, no-store, must-revalidate`r`nPragma: no-cache`r`nExpires: 0`r`nConnection: close`r`n`r`n"
                 $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($header)
                 $stream.Write($headerBytes, 0, $headerBytes.Length)
                 $stream.Write($content, 0, $content.Length)

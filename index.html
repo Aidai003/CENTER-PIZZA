@@ -219,7 +219,7 @@
         .name-input:focus { border-color: var(--accent); }
         .start-btn { width: 100%; padding: 18px; border-radius: 16px; background: var(--accent); color: white; border: none; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 20px rgba(249,115,22,0.3); margin-bottom: 30px; }
 
-        .user-greeting { padding: 24px 20px 0; display: flex; align-items: center; gap: 10px; }
+        .user-greeting { padding: 24px 20px 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 15px; }
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--story-gradient); display: flex; justify-content: center; align-items: center; font-weight: 700; color: white; }
         .greeting-text h2 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .edit-name { cursor: pointer; color: var(--text-secondary); opacity: 0.5; transition: opacity 0.2s; display: flex; align-items: center; }
@@ -227,20 +227,37 @@
 
         /* Quote Animations */
         .quote-container { margin-top: 15px; min-height: 80px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 0 10px; }
-        .quote-text { font-size: 24px; color: var(--text-primary); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(20px); }
+        .quote-text { font-size: 28px; color: var(--text-primary); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; transform: translateY(20px); }
         .quote-text.active { opacity: 1; transform: translateY(0); }
         
-        .font-elegant { font-family: 'Playfair Display', serif; font-style: italic; }
-        .font-cursive { font-family: 'Dancing Script', cursive; }
-        .font-playful { font-family: 'Caveat', cursive; font-size: 28px; }
+        .font-elegant { font-family: 'Lobster', cursive; }
+        .font-cursive { font-family: 'Lobster', cursive; }
+        .font-playful { font-family: 'Lobster', cursive; font-size: 28px; }
         .font-bold { font-family: 'Lobster', cursive; }
-        .font-fancy { font-family: 'Great Vibes', cursive; font-size: 30px; }
+        .font-fancy { font-family: 'Lobster', cursive; font-size: 30px; }
 
         @keyframes quoteFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         @keyframes quoteSlideIn { from { transform: translateX(-50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
         .anim-fade { animation: quoteFadeIn 1s forwards; }
         .anim-slide { animation: quoteSlideIn 0.8s forwards; }
+
+        /* Story Viewer Modal */
+        .story-viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: none; flex-direction: column; }
+        .story-progress { position: absolute; top: 15px; left: 10px; right: 10px; display: flex; gap: 5px; z-index: 3010; }
+        .progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden; }
+        .progress-inner { height: 100%; width: 0%; background: #fff; transition: width linear; }
+        .story-header { position: absolute; top: 30px; left: 15px; right: 15px; display: flex; align-items: center; justify-content: space-between; z-index: 3010; color: white; }
+        .story-user { display: flex; align-items: center; gap: 10px; }
+        .story-user img { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fff; }
+        .story-user span { font-weight: 600; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .story-close { background: none; border: none; color: white; cursor: pointer; }
+        .story-body { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; }
+        .story-content-box { width: 100%; height: 100%; max-width: 480px; position: relative; display: flex; justify-content: center; align-items: center; }
+        .story-content-box img, .story-content-box video { width: 100%; height: 100%; object-fit: cover; }
+        .story-nav { position: absolute; top: 0; bottom: 0; width: 30%; z-index: 3005; }
+        .story-nav-prev { left: 0; }
+        .story-nav-next { right: 0; }
     </style>
 </head>
 <body>
@@ -269,8 +286,8 @@
     </div>
 
     <div class="app-container">
-        <div class="user-greeting" id="greeting-area" style="display: none; flex-direction: column; align-items: flex-start;">
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+        <div class="user-greeting" id="greeting-area" style="display: none; flex-direction: column; align-items: center;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;">
                 <div class="user-avatar" id="user-initials">?</div>
                 <div class="greeting-text">
                     <h2><span data-i18n="hello">Привет</span>, <span id="user-display-name">Гость</span>! <span class="edit-name" id="change-name-btn" title="Изменить имя"><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></span></h2>
@@ -288,28 +305,28 @@
             </div>
         </div>
 
-        <section class="stories-container">
-            <div class="story-item">
-                <div class="story-ring"><img src="novelty_dishes_story_1777988971245.png" alt="Новинки"></div>
-                <span data-i18n="new">Новинки</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=200&h=200&q=80" alt="Акции"></div>
-                <span data-i18n="promo">Акции</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&h=200&q=80" alt="Бонусы"></div>
-                <span data-i18n="bonus">Бонусы</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&h=200&q=80" alt="Адрес"></div>
-                <span data-i18n="address">Адрес</span>
-            </div>
-            <div class="story-item">
-                <div class="story-ring"><img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=200&h=200&q=80" alt="О нас"></div>
-                <span data-i18n="about">О нас</span>
-            </div>
+        <section class="stories-container" id="stories-main-container">
+            <!-- Dynamically loaded from Admin -->
         </section>
+
+        <!-- Story Viewer Modal -->
+        <div id="story-viewer" class="story-viewer">
+            <div class="story-progress" id="story-progress-container"></div>
+            <div class="story-header">
+                <div class="story-user">
+                    <img id="viewer-avatar" src="">
+                    <span id="viewer-title"></span>
+                </div>
+                <button class="story-close" onclick="closeStoryViewer()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="story-body">
+                <div class="story-nav story-nav-prev" onclick="prevStorySegment()"></div>
+                <div class="story-nav story-nav-next" onclick="nextStorySegment()"></div>
+                <div class="story-content-box" id="story-content-box">
+                    <!-- Image or Video here -->
+                </div>
+            </div>
+        </div>
         <div class="categories-filter" id="cat-filter">
             <div class="filter-pill active" data-cat="all" data-i18n="all">Все</div>
             <div class="filter-pill" data-cat="first" data-i18n="first">Первые блюда</div>
@@ -325,17 +342,17 @@
             </div>
         </main>
         <nav class="bottom-nav">
-            <div class="nav-item active" id="nav-home-btn"><i data-lucide="home"></i><span data-i18n="navHome">Главная</span></div>
-            <div class="nav-item" id="open-scheme"><i data-lucide="map"></i><span data-i18n="navScheme">Бронь</span></div>
-            <div class="nav-item" id="nav-fav-btn"><i data-lucide="heart"></i><span data-i18n="fav">Избранное</span></div>
-            <div class="nav-item cart-item" id="open-cart">
+            <div class="nav-item active" id="nav-home-btn" onclick="openHome()"><i data-lucide="home"></i><span data-i18n="navHome">Главная</span></div>
+            <div class="nav-item" id="open-scheme" onclick="openScheme()"><i data-lucide="map"></i><span data-i18n="navScheme">Бронь</span></div>
+            <div class="nav-item" id="nav-fav-btn" onclick="openFav()"><i data-lucide="heart"></i><span data-i18n="fav">Избранное</span></div>
+            <div class="nav-item cart-item" id="open-cart" onclick="openCart()">
                 <div class="cart-icon-wrapper">
                     <i data-lucide="shopping-bag"></i>
                     <span class="badge">0</span>
                 </div>
                 <span data-i18n="navCart">Корзина</span>
             </div>
-            <div class="nav-item" id="open-profile"><i data-lucide="user"></i><span data-i18n="navProfile">Профиль</span></div>
+            <div class="nav-item" id="open-profile" onclick="openProfile()"><i data-lucide="user"></i><span data-i18n="navProfile">Профиль</span></div>
         </nav>
 
         <!-- Cart Modal -->
@@ -470,7 +487,7 @@
                         <p data-i18n="appLangDesc">Выбрать другой язык</p>
                     </div>
                 </div>
-                <div class="profile-menu-item" onclick="profileModal.style.display='none'; applyCategoryFilter('fav');">
+                <div class="profile-menu-item" onclick="profileModal.style.display='none'; document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); navFavBtn.classList.add('active'); applyCategoryFilter('fav');">
                     <i data-lucide="heart"></i>
                     <div class="profile-menu-item-info">
                         <h4 data-i18n="myFavs">Мои фавориты</h4>
@@ -506,7 +523,7 @@
             let favorites = JSON.parse(localStorage.getItem('userFavs')) || [];
             let splitCount = 1;
             const DEFAULT_STORIES = [
-                { id: 1, title: 'Новинки', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=200&q=80', i18n: 'new' },
+                { id: 1, title: 'Новинки', img: 'novelty_new.png', content: 'novelty_new.png', type: 'image', i18n: 'new' },
                 { id: 2, title: 'Акции', img: 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=200&q=80', i18n: 'promo' },
                 { id: 3, title: 'Бонусы', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80', i18n: 'bonus' },
                 { id: 4, title: 'Адрес', img: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=200&q=80', i18n: 'address' },
@@ -528,11 +545,7 @@
             const cartModal = document.getElementById('cart-modal');
             const schemeModal = document.getElementById('scheme-modal');
             const profileModal = document.getElementById('profile-modal');
-            const openCartBtn = document.getElementById('open-cart');
-            const openSchemeBtn = document.getElementById('open-scheme');
-            const openProfileBtn = document.getElementById('open-profile');
-            const navHomeBtn = document.getElementById('nav-home-btn');
-            const navFavBtn = document.getElementById('nav-fav-btn');
+            
             const closeCartBtn = document.getElementById('close-cart');
             const closeSchemeBtn = document.getElementById('close-scheme');
             const closeProfileBtn = document.getElementById('close-profile');
@@ -638,6 +651,120 @@
                 });
                 localStorage.setItem('userLang', lang);
                 renderMenu();
+                renderStories();
+            };
+
+            let currentStoryIdx = 0;
+            let storyTimer = null;
+
+            const renderStories = () => {
+                const container = document.getElementById('stories-main-container');
+                if (!container) return;
+                container.innerHTML = '';
+                
+                const currentLang = localStorage.getItem('userLang') || 'ru';
+                const t = translations[currentLang];
+
+                STORIES.forEach((story, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'story-item';
+                    const title = t[story.i18n] || story.title;
+                    item.innerHTML = `
+                        <div class="story-ring"><img src="${story.img}" alt="${title}"></div>
+                        <span>${title}</span>
+                    `;
+                    item.onclick = () => openStoryViewer(index);
+                    container.appendChild(item);
+                });
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                setupDragScroll('.stories-container');
+            };
+
+            const openStoryViewer = (index) => {
+                currentStoryIdx = index;
+                const modal = document.getElementById('story-viewer');
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                showStorySegment();
+            };
+
+            window.closeStoryViewer = () => {
+                const modal = document.getElementById('story-viewer');
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+                clearTimeout(storyTimer);
+                document.getElementById('story-content-box').innerHTML = '';
+            };
+
+            const showStorySegment = () => {
+                clearTimeout(storyTimer);
+                const story = STORIES[currentStoryIdx];
+                const contentBox = document.getElementById('story-content-box');
+                const progressContainer = document.getElementById('story-progress-container');
+                
+                document.getElementById('viewer-avatar').src = story.img;
+                const currentLang = localStorage.getItem('userLang') || 'ru';
+                document.getElementById('viewer-title').innerText = translations[currentLang][story.i18n] || story.title;
+
+                // Progress bars
+                progressContainer.innerHTML = '';
+                STORIES.forEach((_, i) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'progress-bar';
+                    const inner = document.createElement('div');
+                    inner.className = 'progress-inner';
+                    if (i < currentStoryIdx) inner.style.width = '100%';
+                    if (i === currentStoryIdx) {
+                        setTimeout(() => inner.style.width = '100%', 50);
+                        inner.style.transitionDuration = '5s';
+                    }
+                    bar.appendChild(inner);
+                    progressContainer.appendChild(bar);
+                });
+
+                // Content
+                contentBox.innerHTML = '';
+                if (story.type === 'video' && story.content) {
+                    const video = document.createElement('video');
+                    video.src = story.content;
+                    video.autoplay = true;
+                    video.muted = false;
+                    video.playsInline = true;
+                    video.onended = nextStorySegment;
+                    contentBox.appendChild(video);
+                    // Video duration based transition
+                    video.onloadedmetadata = () => {
+                        const duration = video.duration * 1000;
+                        const activeInner = progressContainer.children[currentStoryIdx].firstChild;
+                        activeInner.style.transitionDuration = `${duration}ms`;
+                    };
+                } else {
+                    const img = document.createElement('img');
+                    img.src = story.content || story.img;
+                    contentBox.appendChild(img);
+                    storyTimer = setTimeout(nextStorySegment, 5000);
+                }
+                
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            };
+
+            window.nextStorySegment = () => {
+                if (currentStoryIdx < STORIES.length - 1) {
+                    currentStoryIdx++;
+                    showStorySegment();
+                } else {
+                    closeStoryViewer();
+                }
+            };
+
+            window.prevStorySegment = () => {
+                if (currentStoryIdx > 0) {
+                    currentStoryIdx--;
+                    showStorySegment();
+                } else {
+                    currentStoryIdx = 0;
+                    showStorySegment();
+                }
             };
 
             const checkUser = () => {
@@ -891,13 +1018,17 @@
                 updateCartUI();
             };
 
-            openCartBtn.addEventListener('click', () => {
+            window.openCart = () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.getElementById('open-cart').classList.add('active');
                 cartModal.style.display = 'flex';
                 updateCartUI();
-            });
+            };
 
             closeCartBtn.addEventListener('click', () => {
                 cartModal.style.display = 'none';
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.getElementById('nav-home-btn').classList.add('active');
             });
 
             openSearchBtn.addEventListener('click', () => {
@@ -962,13 +1093,17 @@
                 });
             };
 
-            openSchemeBtn.addEventListener('click', () => {
+            window.openScheme = () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.getElementById('open-scheme').classList.add('active');
                 schemeModal.style.display = 'flex';
                 renderClientScheme();
-            });
+            };
 
             closeSchemeBtn.addEventListener('click', () => {
                 schemeModal.style.display = 'none';
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.getElementById('nav-home-btn').classList.add('active');
             });
 
             document.getElementById('submit-res-btn').addEventListener('click', () => {
@@ -990,27 +1125,31 @@
                 schemeModal.style.display = 'none';
             });
 
-            openProfileBtn.addEventListener('click', () => {
+            window.openProfile = () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.getElementById('open-profile').classList.add('active');
                 profileModal.style.display = 'flex';
-            });
+            };
 
             closeProfileBtn.addEventListener('click', () => {
                 profileModal.style.display = 'none';
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.getElementById('nav-home-btn').classList.add('active');
             });
 
-            navFavBtn.addEventListener('click', () => {
+            window.openFav = () => {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                navFavBtn.classList.add('active');
+                document.getElementById('nav-fav-btn').classList.add('active');
                 applyCategoryFilter('fav');
                 window.scrollTo({ top: document.getElementById('cat-filter').offsetTop - 80, behavior: 'smooth' });
-            });
+            };
 
-            navHomeBtn.addEventListener('click', () => {
+            window.openHome = () => {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                navHomeBtn.classList.add('active');
+                document.getElementById('nav-home-btn').classList.add('active');
                 applyCategoryFilter('all');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
+            };
 
             const applyCategoryFilter = (category) => {
                 const pills = document.querySelectorAll('.filter-pill');
@@ -1196,11 +1335,11 @@
                 closePizza();
             };
 
-            renderMenu();
+            checkUser();
 
             // Quote Rotation Logic
             const quoteBox = document.getElementById('quote-box');
-            const fonts = ['font-elegant', 'font-cursive', 'font-playful', 'font-bold', 'font-fancy'];
+            const fonts = ['font-bold'];
             const anims = ['anim-fade', 'anim-slide'];
             let currentQuoteIdx = 0;
 
@@ -1227,6 +1366,20 @@
 
             updateQuote();
             setInterval(updateQuote, 5000);
+        });
+    </script>
+    <script>
+        window.addEventListener('error', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:10px;font-size:12px;';
+            errDiv.innerText = 'Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
+            document.body.appendChild(errDiv);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:50px;left:0;width:100%;background:red;color:white;z-index:9999;padding:10px;font-size:12px;';
+            errDiv.innerText = 'Promise Error: ' + e.reason;
+            document.body.appendChild(errDiv);
         });
     </script>
 </body>
